@@ -98,6 +98,13 @@
     .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
     .me-tag { background: var(--primary); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
 
+    .avatar-picker-wrap { margin-top: 6px; }
+    .avatar-picker-wrap label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 7px; display: block; }
+    .avatar-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+    .avatar-opt { width: 40px; height: 40px; border-radius: 10px; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: all .15s; background: var(--bg); user-select: none; }
+    .avatar-opt:hover { border-color: var(--primary-light); transform: scale(1.1); }
+    .avatar-opt.selected { border-color: var(--primary); background: rgba(99,102,241,.1); box-shadow: 0 0 0 2px rgba(99,102,241,.18); transform: scale(1.08); }
+
     .add-member-row { display: flex; gap: 8px; margin-top: 12px; }
 
     .expense-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -192,6 +199,10 @@
         <label>השם שלך</label>
         <input id="c-user" type="text" placeholder="הכנס את שמך" maxlength="30">
       </div>
+      <div class="form-group avatar-picker-wrap">
+        <label>האווטאר שלך</label>
+        <div class="avatar-picker" id="ap-create"></div>
+      </div>
       <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
     </div>
 
@@ -204,6 +215,10 @@
       <div class="form-group">
         <label>השם שלך</label>
         <input id="j-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+      </div>
+      <div class="form-group avatar-picker-wrap">
+        <label>האווטאר שלך</label>
+        <div class="avatar-picker" id="ap-join"></div>
       </div>
       <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
     </div>
@@ -324,6 +339,52 @@ const app = initializeApp({
 });
 const db = getDatabase(app);
 
+const AVATARS = ['😀','😎','🦊','🐻','🦁','🐼','🦋','🌟','🎯','🚀','🎸','🏄','🌈','🦄','🐯','🐙'];
+const AVATAR_COLORS = [
+  '#6366f1','#f59e0b','#10b981','#e11d48',
+  '#8b5cf6','#0891b2','#f97316','#db2777',
+  '#14b8a6','#65a30d','#9333ea','#ea580c',
+];
+const GROUP_GRADIENTS = [
+  ['#6366f1','#8b5cf6'],
+  ['#0ea5e9','#6366f1'],
+  ['#10b981','#0ea5e9'],
+  ['#f59e0b','#ef4444'],
+  ['#ec4899','#8b5cf6'],
+  ['#14b8a6','#6366f1'],
+  ['#f97316','#ec4899'],
+  ['#84cc16','#14b8a6'],
+];
+
+let selectedAvatarCreate = AVATARS[0];
+let selectedAvatarJoin   = AVATARS[0];
+
+function strHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function avatarColor(id) {
+  return AVATAR_COLORS[strHash(id) % AVATAR_COLORS.length];
+}
+function groupGradient(code) {
+  const g = GROUP_GRADIENTS[strHash(code) % GROUP_GRADIENTS.length];
+  return `linear-gradient(135deg, ${g[0]} 0%, ${g[1]} 100%)`;
+}
+function renderAvatarPicker(containerId, form) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const current = form === 'create' ? selectedAvatarCreate : selectedAvatarJoin;
+  container.innerHTML = AVATARS.map(a =>
+    `<div class="avatar-opt${a === current ? ' selected' : ''}" onclick="pickAvatar('${form}','${a}')">${a}</div>`
+  ).join('');
+}
+window.pickAvatar = function(form, emoji) {
+  if (form === 'create') selectedAvatarCreate = emoji;
+  else selectedAvatarJoin = emoji;
+  renderAvatarPicker(form === 'create' ? 'ap-create' : 'ap-join', form);
+};
+
 let groupCode   = null;
 let myId        = null;
 let myName      = null;
@@ -378,7 +439,7 @@ window.createGroup = async function() {
   await set(ref(db,`splits/${code}`), {
     name: gName,
     createdAt: Date.now(),
-    members: { [uid]: { name: uName, joinedAt: Date.now() } }
+    members: { [uid]: { name: uName, joinedAt: Date.now(), avatar: selectedAvatarCreate } }
   });
 
   saveGroupToList(code, uid, uName, gName);
@@ -397,7 +458,7 @@ window.joinGroup = async function() {
 
     const groupName = snap.val().name || code;
     const uid = myUserId();
-    await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now() });
+    await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now(), avatar: selectedAvatarJoin });
 
     saveGroupToList(code, uid, uName, groupName);
     enterGroup(code, uid, uName);
@@ -429,7 +490,7 @@ function renderMyGroups() {
   list.innerHTML = groups.map((g, i) => `
     <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
       <div class="sgi-header" onclick="toggleGroupDetails(${i})">
-        <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
+        <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
         <div class="saved-group-info">
           <div class="saved-group-name">${g.groupName || g.code}</div>
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
@@ -479,7 +540,7 @@ async function loadGroupDetails(idx) {
           <div class="sgi-stat"><span class="sgi-stat-val">${Object.keys(expenses).length}</span><span class="sgi-stat-lbl">פעולות</span></div>
         </div>
         <div class="sgi-members">
-          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:10px">${initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
+          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:${members[id].avatar?'13px':'10px'};background:${avatarColor(id)}">${members[id].avatar||initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
         </div>
         <div class="sgi-actions">
           <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">פתח קבוצה ←</button>
@@ -535,6 +596,7 @@ function enterGroup(code, uid, name) {
 
   document.getElementById('home-screen').classList.remove('active');
   document.getElementById('group-screen').classList.add('active');
+  document.querySelector('.group-header').style.background = groupGradient(code);
 
   if (unsubscribe) unsubscribe();
   unsubscribe = onValue(ref(db,`splits/${code}`), snap => {
@@ -678,7 +740,7 @@ function render() {
     ? mIds.map(id => {
         const m = members[id];
         return `<div class="member-chip">
-          <div class="avatar">${initials(m.name)}</div>
+          <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'14px':'11px'}">${m.avatar||initials(m.name)}</div>
           <span>${m.name}</span>
           ${id===myId ? '<span class="me-tag">אני</span>' : ''}
         </div>`;
@@ -702,12 +764,13 @@ function render() {
   const bal = calcBalances();
   document.getElementById('balances-list').innerHTML = mIds.length
     ? mIds.map(id => {
+        const m = members[id];
         const b = bal[id]||0;
         const cls = b>0.01?'pos': b<-0.01?'neg':'zero';
         const sign = b>0?'+':'';
         return `<div class="balance-item">
-          <div class="avatar">${initials(members[id].name)}</div>
-          <span class="balance-name">${members[id].name}${id===myId?' <span style="font-size:11px;color:var(--text-light)">(אני)</span>':''}</span>
+          <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'14px':'11px'}">${m.avatar||initials(m.name)}</div>
+          <span class="balance-name">${m.name}${id===myId?' <span style="font-size:11px;color:var(--text-light)">(אני)</span>':''}</span>
           <span class="balance-amount ${cls}">${sign}₪${Math.abs(b).toFixed(2)}</span>
         </div>`;
       }).join('')
@@ -719,10 +782,10 @@ function render() {
         const fName = members[t.from]?.name || '?';
         const tName = members[t.to]?.name   || '?';
         return `<div class="transfer-item">
-          <div class="avatar" style="background:var(--danger)">${initials(fName)}</div>
+          <div class="avatar" style="background:${avatarColor(t.from)};font-size:${members[t.from]?.avatar?'14px':'11px'}">${members[t.from]?.avatar||initials(fName)}</div>
           <span class="tr-from">${fName}</span>
           <span class="tr-arrow">←</span>
-          <div class="avatar" style="background:var(--success)">${initials(tName)}</div>
+          <div class="avatar" style="background:${avatarColor(t.to)};font-size:${members[t.to]?.avatar?'14px':'11px'}">${members[t.to]?.avatar||initials(tName)}</div>
           <span class="tr-to">${tName}</span>
           <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
         </div>`;
@@ -746,6 +809,9 @@ function render() {
   } catch {}
   localStorage.removeItem('splits_session');
 })();
+
+renderAvatarPicker('ap-create', 'create');
+renderAvatarPicker('ap-join', 'join');
 
 // Handle invite link: splits.html?code=ABCDEF
 (async () => {
