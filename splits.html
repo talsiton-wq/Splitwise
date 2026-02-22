@@ -736,13 +736,15 @@ function renderMyGroups() {
   section.style.display = '';
   list.innerHTML = groups.map((g, i) => `
     <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
-      <div class="sgi-header" onclick="toggleGroupDetails(${i})" style="cursor:pointer">
+      <div class="sgi-header">
         <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
         <div class="saved-group-info">
           <div class="saved-group-name">${g.groupName || g.code}</div>
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
-        <span class="sgi-arrow">▼</span>
+        <button class="btn btn-${expandedGroupIdx === i ? 'secondary' : 'primary'} btn-sm" onclick="toggleGroupDetails(${i})" style="flex-shrink:0;white-space:nowrap">
+          ${expandedGroupIdx === i ? '▲ סגור' : 'פתח קבוצה ▼'}
+        </button>
         <button class="btn-ghost" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="הסר מהרשימה" style="flex-shrink:0;color:var(--danger);padding:5px 7px;font-size:17px">🗑</button>
       </div>
       <div class="sgi-details" id="sgd-${i}">
@@ -1107,7 +1109,7 @@ window.recordPayment = async function(fromId, toId, suggestedAmt) {
   const expRef = push(ref(db, `splits/${groupCode}/expenses`));
   await set(expRef, {
     type: 'payment',
-    description: `💸 ${fromName} → ${toName}`,
+    description: `💸 ${fromName} ← ${toName}`,
     amount: amt, currency: 'ILS', amountILS: amt,
     paidBy: fromId, paidTo: toId,
     payerName: fromName, recipientName: toName,
@@ -1115,7 +1117,7 @@ window.recordPayment = async function(fromId, toId, suggestedAmt) {
   });
   await push(ref(db, `splits/${groupCode}/log`), {
     type: 'payment',
-    description: `💸 ${fromName} → ${toName}`,
+    description: `💸 ${fromName} ← ${toName}`,
     amount: amt, currency: 'ILS', amountILS: amt,
     payerName: fromName, actor: myName, timestamp: Date.now()
   });
