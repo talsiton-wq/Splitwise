@@ -526,6 +526,10 @@
       </p>
       <div id="transfers-list"></div>
     </div>
+    <div class="card">
+      <div class="card-title">💸 היסטוריית החזרות</div>
+      <div id="payments-list"></div>
+    </div>
   </div>
 
   <div id="tab-log" class="tab-content">
@@ -875,6 +879,7 @@ function enterGroup(code, uid, name) {
     groupData = snap.val() || {};
     if (!groupData.members)  groupData.members  = {};
     if (!groupData.expenses) groupData.expenses = {};
+    if (!groupData.payments) groupData.payments = {};
     if (!groupData.log)      groupData.log      = {};
     render();
   });
@@ -1106,9 +1111,8 @@ window.recordPayment = async function(fromId, toId, suggestedAmt) {
   if (input === null) return;
   const amt = parseFloat(input);
   if (!amt || amt <= 0) { toast('סכום לא תקין'); return; }
-  const expRef = push(ref(db, `splits/${groupCode}/expenses`));
-  await set(expRef, {
-    type: 'payment',
+  const payRef = push(ref(db, `splits/${groupCode}/payments`));
+  await set(payRef, {
     description: `💸 ${fromName} ← ${toName}`,
     amount: amt, currency: 'ILS', amountILS: amt,
     paidBy: fromId, paidTo: toId,
@@ -1266,16 +1270,24 @@ window.deleteExpense = async function(expId) {
 function calcBalances() {
   const members  = groupData.members;
   const expenses = Object.values(groupData.expenses || {});
+  const payments = Object.values(groupData.payments || {});
   const ids      = Object.keys(members);
   if (!ids.length) return {};
 
   const bal = {};
   ids.forEach(id => bal[id] = 0);
 
+  // ── New payments path ──
+  payments.forEach(p => {
+    const amt = p.amountILS ?? p.amount ?? 0;
+    if (p.paidBy in bal) bal[p.paidBy] += amt;
+    if (p.paidTo in bal) bal[p.paidTo] -= amt;
+  });
+
   expenses.forEach(e => {
     const amt = e.amountILS ?? e.amount ?? 0;
 
-    // ── Direct payment (debt repayment) ──
+    // ── Legacy: payments stored in expenses ──
     if (e.type === 'payment') {
       if (e.paidBy in bal) bal[e.paidBy] += amt;
       if (e.paidTo in bal) bal[e.paidTo] -= amt;
@@ -1340,25 +1352,12 @@ function renderExpenses() {
   const query    = (document.getElementById('exp-search')?.value || '').trim().toLowerCase();
 
   const esSorted = expList
+    .filter(([,e]) => e.type !== 'payment') // payments go to their own history section
     .sort((a,b) => b[1].timestamp - a[1].timestamp)
     .filter(([,e]) => !query || (e.description||'').toLowerCase().includes(query) || (e.payerName||'').toLowerCase().includes(query) || (e.note||'').toLowerCase().includes(query));
 
   document.getElementById('expenses-list').innerHTML = esSorted.length
     ? esSorted.map(([id,e]) => {
-        // ── Payment item ──
-        if (e.type === 'payment') {
-          const amt = (e.amountILS ?? e.amount ?? 0).toFixed(2);
-          return `<div class="expense-item payment-item">
-            <div class="exp-icon" style="background:linear-gradient(135deg,var(--success),#34d399)">💸</div>
-            <div class="exp-info">
-              <div class="exp-desc">${e.description}</div>
-              <div class="exp-meta">החזרת חוב &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
-            </div>
-            <div class="exp-amount" style="color:var(--success)">₪${amt}</div>
-            ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
-          </div>`;
-        }
-
         const isILS = !e.currency || e.currency === 'ILS';
         const amtHtml = isILS
           ? `<div class="exp-amount">₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</div>`
@@ -1430,7 +1429,9 @@ function render() {
   document.getElementById('g-code').textContent    = groupCode;
   document.getElementById('s-members').textContent = `👥 ${mIds.length}`;
 
-  const total = expList.reduce((s,[,e]) => s + (e.amountILS ?? e.amount ?? 0), 0);
+  // Only real expenses (not legacy payments) count toward the total
+  const realExpList = expList.filter(([,e]) => e.type !== 'payment');
+  const total = realExpList.reduce((s,[,e]) => s + (e.amountILS ?? e.amount ?? 0), 0);
   document.getElementById('s-total').textContent = '₪' + total.toFixed(2);
   document.getElementById('s-share').textContent = mIds.length ? '₪' + (total/mIds.length).toFixed(2) : '₪0';
 
@@ -1466,10 +1467,10 @@ function render() {
 
   const bal = calcBalances();
 
-  // Per-member paid summary
+  // Per-member paid summary (exclude legacy payments)
   const paidPerMember = {};
   mIds.forEach(id => paidPerMember[id] = 0);
-  expList.forEach(([,e]) => { if (e.paidBy in paidPerMember) paidPerMember[e.paidBy] += e.amountILS ?? e.amount ?? 0; });
+  realExpList.forEach(([,e]) => { if (e.paidBy in paidPerMember) paidPerMember[e.paidBy] += e.amountILS ?? e.amount ?? 0; });
 
   document.getElementById('balances-list').innerHTML = (mIds.length
     ? mIds.map(id => {
@@ -1513,7 +1514,28 @@ function render() {
           </div>
         </div>`;
       }).join('')
-    : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
+    : `<div class="empty"><div class="empty-icon">🎉</div><h3>${realExpList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${realExpList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
+
+  // ─── Payments history ────────────────────────────────────
+  const allPayments = [
+    ...Object.values(groupData.payments || {}),
+    ...Object.values(groupData.expenses || {}).filter(e => e.type === 'payment') // legacy
+  ].sort((a,b) => b.timestamp - a.timestamp);
+  document.getElementById('payments-list').innerHTML = allPayments.length
+    ? allPayments.map(p => {
+        const fName = p.payerName   || '?';
+        const tName = p.recipientName || '?';
+        const canDel = p.paidBy === myId;
+        return `<div class="balance-item">
+          <div class="avatar" style="background:${avatarColor(p.paidBy||'')};font-size:14px">${members[p.paidBy]?.avatar || initials(fName)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${fName} ← ${tName}</div>
+            <div style="font-size:12px;color:var(--text-light)">${fmtDate(p.timestamp)}</div>
+          </div>
+          <span style="font-size:16px;font-weight:800;color:var(--success);white-space:nowrap">₪${(p.amountILS ?? p.amount ?? 0).toFixed(2)}</span>
+        </div>`;
+      }).join('')
+    : `<div class="empty" style="padding:20px 16px"><div class="empty-icon" style="font-size:32px">💸</div><h3 style="font-size:15px">אין החזרות עדיין</h3></div>`;
 
   // ─── Log tab ────────────────────────────────────────────
   const logEntries = Object.values(groupData.log || {}).sort((a,b) => b.timestamp - a.timestamp);
