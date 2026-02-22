@@ -145,11 +145,27 @@
 
     #my-groups-section { width: 100%; max-width: 400px; margin-top: 20px; }
     .my-groups-title { font-size: 13px; font-weight: 700; color: var(--text-light); margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: .5px; }
-    .saved-group-item { background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow .15s, transform .15s; }
-    .saved-group-item:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .saved-group-item { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: var(--shadow); overflow: hidden; transition: box-shadow .15s; }
+    .saved-group-item:hover { box-shadow: var(--shadow-md); }
+    .sgi-header { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; user-select: none; }
     .saved-group-info { flex: 1; min-width: 0; }
     .saved-group-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .saved-group-meta { font-size: 12px; color: var(--text-light); }
+    .sgi-arrow { font-size: 13px; color: var(--text-light); transition: transform .25s; flex-shrink: 0; }
+    .saved-group-item.expanded .sgi-arrow { transform: rotate(180deg); }
+    .sgi-details { border-top: 1px solid var(--border); display: none; }
+    .saved-group-item.expanded .sgi-details { display: block; }
+    .sgi-detail-content { padding: 12px 16px 16px; }
+    .sgi-stats { display: flex; gap: 6px; margin-bottom: 10px; }
+    .sgi-stat { flex: 1; text-align: center; padding: 8px 4px; background: var(--bg); border-radius: 8px; }
+    .sgi-stat-val { display: block; font-size: 18px; font-weight: 800; color: var(--primary); }
+    .sgi-stat-lbl { font-size: 11px; color: var(--text-light); font-weight: 600; }
+    .sgi-members { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .sgi-actions { display: flex; gap: 8px; }
+
+    .invite-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; text-align: center; }
+    .invite-banner h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .invite-banner p { font-size: 13px; opacity: .85; margin-bottom: 14px; }
   </style>
 </head>
 <body>
@@ -207,7 +223,10 @@
         📋 <span id="g-code"></span>
       </div>
     </div>
-    <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
+    <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
+      <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
+      <button class="leave-btn" onclick="shareGroupLink()" title="שלח קישור הצטרפות">🔗 שתף קישור</button>
+    </div>
   </div>
 
   <div class="summary-row">
@@ -399,22 +418,77 @@ function saveGroupToList(code, uid, myName, groupName) {
   localStorage.setItem('splits_groups', JSON.stringify(groups.slice(0, 20)));
 }
 
+let expandedGroupIdx = null;
+
 function renderMyGroups() {
   const groups = getSavedGroups();
   const section = document.getElementById('my-groups-section');
   const list = document.getElementById('my-groups-list');
-  if (!groups.length) { section.style.display = 'none'; return; }
+  if (!groups.length) { section.style.display = 'none'; expandedGroupIdx = null; return; }
   section.style.display = '';
   list.innerHTML = groups.map((g, i) => `
-    <div class="saved-group-item" onclick="enterSavedGroup(${i})">
-      <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
-      <div class="saved-group-info">
-        <div class="saved-group-name">${g.groupName || g.code}</div>
-        <div class="saved-group-meta">כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
+    <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
+      <div class="sgi-header" onclick="toggleGroupDetails(${i})">
+        <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
+        <div class="saved-group-info">
+          <div class="saved-group-name">${g.groupName || g.code}</div>
+          <div class="saved-group-meta">כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
+        </div>
+        <span class="sgi-arrow">▼</span>
+        <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה" style="flex-shrink:0">✕</button>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה">✕</button>
+      <div class="sgi-details" id="sgd-${i}">
+        <div class="sgi-detail-content">
+          <div class="spinner" style="width:22px;height:22px;margin:10px auto;border-width:2px"></div>
+        </div>
+      </div>
     </div>
   `).join('');
+  if (expandedGroupIdx !== null) loadGroupDetails(expandedGroupIdx);
+}
+
+window.toggleGroupDetails = function(idx) {
+  expandedGroupIdx = (expandedGroupIdx === idx) ? null : idx;
+  renderMyGroups();
+};
+
+async function loadGroupDetails(idx) {
+  const groups = getSavedGroups();
+  const g = groups[idx];
+  if (!g) return;
+  const detailEl = document.getElementById(`sgd-${idx}`);
+  if (!detailEl) return;
+  try {
+    const snap = await get(ref(db, `splits/${g.code}`));
+    if (!snap.exists()) {
+      detailEl.innerHTML = '<div class="sgi-detail-content" style="color:var(--danger);font-size:13px">קבוצה לא נמצאה – ייתכן שנמחקה</div>';
+      return;
+    }
+    const data = snap.val();
+    const members  = data.members  || {};
+    const expenses = data.expenses || {};
+    const mIds  = Object.keys(members);
+    const total = Object.values(expenses).reduce((s,e) => s+(e.amount||0), 0);
+    g.groupName = data.name || g.groupName;
+    localStorage.setItem('splits_groups', JSON.stringify(groups));
+    detailEl.innerHTML = `
+      <div class="sgi-detail-content">
+        <div class="sgi-stats">
+          <div class="sgi-stat"><span class="sgi-stat-val">${mIds.length}</span><span class="sgi-stat-lbl">חברים</span></div>
+          <div class="sgi-stat"><span class="sgi-stat-val">₪${total.toFixed(0)}</span><span class="sgi-stat-lbl">הוצאות</span></div>
+          <div class="sgi-stat"><span class="sgi-stat-val">${Object.keys(expenses).length}</span><span class="sgi-stat-lbl">פעולות</span></div>
+        </div>
+        <div class="sgi-members">
+          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:10px">${initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
+        </div>
+        <div class="sgi-actions">
+          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">כנס לקבוצה ←</button>
+          <button class="btn btn-secondary" onclick="shareGroupLink('${g.code}')" title="שתף קישור הצטרפות">🔗 שתף</button>
+        </div>
+      </div>`;
+  } catch {
+    detailEl.innerHTML = '<div class="sgi-detail-content" style="color:var(--danger);font-size:13px">שגיאה בטעינת פרטים</div>';
+  }
 }
 
 window.enterSavedGroup = async function(idx) {
@@ -426,12 +500,14 @@ window.enterSavedGroup = async function(idx) {
     toast('קבוצה לא נמצאה – ייתכן שנמחקה');
     groups.splice(idx, 1);
     localStorage.setItem('splits_groups', JSON.stringify(groups));
+    expandedGroupIdx = null;
     renderMyGroups();
     return;
   }
   g.groupName = snap.val().name || g.groupName;
   g.lastAccessed = Date.now();
   localStorage.setItem('splits_groups', JSON.stringify(groups));
+  expandedGroupIdx = null;
   enterGroup(g.code, g.uid, g.myName);
 };
 
@@ -440,7 +516,18 @@ window.removeGroupFromList = function(idx, e) {
   const groups = getSavedGroups();
   groups.splice(idx, 1);
   localStorage.setItem('splits_groups', JSON.stringify(groups));
+  if (expandedGroupIdx === idx) expandedGroupIdx = null;
+  else if (expandedGroupIdx > idx) expandedGroupIdx--;
   renderMyGroups();
+};
+
+window.shareGroupLink = function(code) {
+  const c = code || groupCode;
+  if (!c) return;
+  const url = location.origin + location.pathname + '?code=' + c;
+  navigator.clipboard.writeText(url)
+    .then(() => toast('קישור הועתק! שלח אותו לחברים'))
+    .catch(() => toast('קישור: ' + url));
 };
 
 function enterGroup(code, uid, name) {
@@ -643,7 +730,7 @@ function render() {
     : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
 }
 
-// Migrate old single-session format to new multi-group format
+// Migrate old single-session format
 (function migrateLegacySession() {
   const raw = localStorage.getItem('splits_session');
   if (!raw) return;
@@ -660,7 +747,33 @@ function render() {
   localStorage.removeItem('splits_session');
 })();
 
-renderMyGroups();
+// Handle invite link: splits.html?code=ABCDEF
+(async () => {
+  const inviteCode = new URLSearchParams(location.search).get('code');
+  if (inviteCode) {
+    // Clean the URL without reloading
+    history.replaceState({}, '', location.pathname);
+    // Show join tab with code pre-filled
+    homeTab('join');
+    document.getElementById('j-code').value = inviteCode.toUpperCase();
+    document.getElementById('j-user').focus();
+    // Try to fetch group name to show a banner
+    try {
+      const snap = await get(ref(db, `splits/${inviteCode.toUpperCase()}`));
+      if (snap.exists()) {
+        const gName = snap.val().name || inviteCode;
+        const banner = document.createElement('div');
+        banner.className = 'invite-banner';
+        banner.innerHTML = `<h2>הוזמנת לקבוצה!</h2><p>הצטרף לקבוצה <strong>"${gName}"</strong></p>`;
+        const homeCard = document.querySelector('.home-card');
+        homeCard.parentNode.insertBefore(banner, homeCard);
+      }
+    } catch {}
+    renderMyGroups();
+    return;
+  }
+  renderMyGroups();
+})();
 </script>
 </body>
 </html>
