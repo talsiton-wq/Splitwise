@@ -566,8 +566,7 @@ function renderMyGroups() {
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
         <span class="sgi-arrow">▼</span>
-        <button class="btn btn-secondary btn-sm" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה (מוחק אותך מהקבוצה)" style="flex-shrink:0;color:var(--danger)">🗑</button>
-        <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה בלבד" style="flex-shrink:0">✕</button>
+        <button class="btn btn-secondary btn-sm" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה" style="flex-shrink:0;color:var(--danger)">🗑</button>
       </div>
       <div class="sgi-details" id="sgd-${i}">
         <div class="sgi-detail-content">
