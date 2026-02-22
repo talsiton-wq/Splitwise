@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splits – חלוקת תשלומים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #4f46e5;
+      --primary-light: #818cf8;
+      --primary-dark:  #3730a3;
+      --success:       #10b981;
+      --danger:        #ef4444;
+      --bg:            #f1f5f9;
+      --card:          #ffffff;
+      --text:          #1e293b;
+      --text-light:    #64748b;
+      --border:        #e2e8f0;
+      --shadow:        0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md:     0 4px 6px -1px rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.06);
+      --radius:        14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      direction: rtl;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    #home-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .logo { font-size: 56px; margin-bottom: 6px; }
+    .app-title { font-size: 36px; font-weight: 900; color: var(--primary); margin-bottom: 6px; letter-spacing: -1px; }
+    .app-subtitle { font-size: 15px; color: var(--text-light); margin-bottom: 40px; text-align: center; }
+
+    .home-card { background: var(--card); border-radius: var(--radius); padding: 28px 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow-md); }
+
+    .home-toggle { display: flex; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+    .home-toggle button { flex: 1; padding: 9px; border: none; background: none; cursor: pointer; border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--text-light); transition: all .2s; }
+    .home-toggle button.active { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+    input, select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 15px; color: var(--text); background: var(--bg); transition: border-color .2s, background .2s; direction: rtl; font-family: inherit; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 20px; border: none; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .18s; font-family: inherit; }
+    .btn-primary  { background: var(--primary); color: #fff; width: 100%; }
+    .btn-primary:hover  { background: var(--primary-dark); }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-success  { background: var(--success); color: #fff; }
+    .btn-danger   { background: var(--danger);  color: #fff; }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+    .btn-ghost { background: none; border: none; cursor: pointer; color: var(--text-light); padding: 6px; border-radius: 7px; font-family: inherit; transition: background .15s; }
+    .btn-ghost:hover { background: var(--bg); color: var(--danger); }
+
+    #group-screen { max-width: 620px; margin: 0 auto; padding: 14px; }
+
+    .group-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .group-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+
+    .code-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.18); border-radius: 20px; padding: 3px 11px; font-size: 13px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: background .15s; }
+    .code-badge:hover { background: rgba(255,255,255,.28); }
+
+    .leave-btn { background: rgba(255,255,255,.15); border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background .15s; font-family: inherit; }
+    .leave-btn:hover { background: rgba(255,255,255,.28); }
+
+    .summary-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .summary-card { background: var(--card); border-radius: var(--radius); padding: 14px 10px; text-align: center; box-shadow: var(--shadow); }
+    .summary-label { font-size: 11px; color: var(--text-light); font-weight: 600; margin-bottom: 3px; }
+    .summary-value { font-size: 20px; font-weight: 800; color: var(--primary); }
+
+    .tabs { display: flex; gap: 4px; background: var(--card); border-radius: 11px; padding: 4px; margin-bottom: 14px; box-shadow: var(--shadow); }
+    .tab-btn { flex: 1; padding: 10px 6px; border: none; background: none; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-light); transition: all .2s; font-family: inherit; }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+
+    .members-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+    .member-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border-radius: 20px; padding: 5px 12px 5px 6px; font-size: 13px; font-weight: 500; }
+    .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .me-tag { background: var(--primary); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
+
+    .add-member-row { display: flex; gap: 8px; margin-top: 12px; }
+
+    .expense-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .expense-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .exp-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .exp-info { flex: 1; min-width: 0; }
+    .exp-desc { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .exp-meta { font-size: 12px; color: var(--text-light); }
+    .exp-amount { font-size: 17px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+
+    .balance-item { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .balance-item:last-child { border-bottom: none; }
+    .balance-name { flex: 1; font-weight: 600; font-size: 14px; }
+    .balance-amount { font-size: 15px; font-weight: 800; }
+    .pos { color: var(--success); }
+    .neg { color: var(--danger); }
+    .zero { color: var(--text-light); }
+
+    .transfer-item { display: flex; align-items: center; gap: 10px; padding: 13px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
+    .tr-from { font-weight: 700; color: var(--danger); font-size: 14px; }
+    .tr-to   { font-weight: 700; color: var(--success); font-size: 14px; }
+    .tr-arrow { font-size: 16px; color: var(--text-light); }
+    .tr-amount { margin-right: auto; font-size: 17px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+
+    .add-form { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+
+    .empty { text-align: center; padding: 36px 16px; color: var(--text-light); }
+    .empty-icon { font-size: 44px; margin-bottom: 10px; }
+    .empty h3 { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .empty p { font-size: 13px; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: #fff; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: transform .3s; z-index: 999; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 480px) {
+      .form-row { flex-direction: column; gap: 0; }
+      .summary-row { grid-template-columns: 1fr 1fr; }
+      .summary-row .summary-card:last-child { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div id="home-screen" class="screen active">
+  <div class="logo">💸</div>
+  <h1 class="app-title">Splits</h1>
+  <p class="app-subtitle">חלקו הוצאות בקלות עם חברים ומשפחה</p>
+
+  <div class="home-card">
+    <div class="home-toggle">
+      <button id="ht-create" class="active" onclick="homeTab('create')">קבוצה חדשה</button>
+      <button id="ht-join"                   onclick="homeTab('join')">הצטרף לקבוצה</button>
+    </div>
+
+    <div id="create-tab">
+      <div class="form-group">
+        <label>שם הקבוצה</label>
+        <input id="c-group" type="text" placeholder='למשל: "טיול לאילת"' maxlength="50">
+      </div>
+      <div class="form-group">
+        <label>השם שלך</label>
+        <input id="c-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+      </div>
+      <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
+    </div>
+
+    <div id="join-tab" style="display:none">
+      <div class="form-group">
+        <label>קוד קבוצה</label>
+        <input id="j-code" type="text" placeholder="6 תווים, למשל: ABC123" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="form-group">
+        <label>השם שלך</label>
+        <input id="j-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+      </div>
+      <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
+    </div>
+  </div>
+</div>
+
+<div id="group-screen" class="screen">
+  <div class="group-header">
+    <div>
+      <h1 id="g-name"></h1>
+      <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
+        📋 <span id="g-code"></span>
+      </div>
+    </div>
+    <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-label">סה״כ הוצאות</div>
+      <div class="summary-value" id="s-total">₪0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">חלק לאחד</div>
+      <div class="summary-value" id="s-share">₪0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">מספר חברים</div>
+      <div class="summary-value" id="s-members">0</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('expenses')">הוצאות</button>
+    <button class="tab-btn"        onclick="switchTab('balances')">יתרות</button>
+    <button class="tab-btn"        onclick="switchTab('transfers')">העברות</button>
+  </div>
+
+  <div id="tab-expenses" class="tab-content active">
+    <div class="add-form">
+      <div class="card-title">הוסף הוצאה</div>
+      <div class="form-group">
+        <label>תיאור</label>
+        <input id="e-desc" type="text" placeholder='למשל: "ארוחת ערב"' maxlength="60">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>סכום (₪)</label>
+          <input id="e-amount" type="number" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>שילם</label>
+          <select id="e-paidby"></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addExpense()">+ הוסף הוצאה</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>חברי הקבוצה</span>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddMember()">+ הוסף חבר</button>
+      </div>
+      <div class="members-wrap" id="members-list"></div>
+      <div id="add-member-row" class="add-member-row" style="display:none">
+        <input id="new-member" type="text" placeholder="שם החבר" maxlength="30" style="flex:1">
+        <button class="btn btn-success btn-sm" onclick="addMember()">הוסף</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddMember()">ביטול</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">היסטוריית הוצאות</div>
+      <div id="expenses-list"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <div id="tab-balances" class="tab-content">
+    <div class="card">
+      <div class="card-title">יתרות נוכחיות</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:14px">
+        סכום חיובי = חייבים לך | סכום שלילי = אתה חייב
+      </p>
+      <div id="balances-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-transfers" class="tab-content">
+    <div class="card">
+      <div class="card-title">העברות נדרשות</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:14px">
+        המינימום העברות לאיזון מלא של כל החשבונות
+      </p>
+      <div id="transfers-list"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }    from '<https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js>';
+import { getDatabase, ref, set, get, push, update, remove, onValue }
+                             from '<https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js>';
+
+const app = initializeApp({
+  apiKey:      "AIzaSyA5psJbM4VDL5Dq3Dd3k1qoojepxtlg7OU",
+  authDomain:  "<coffe-a2619.firebaseapp.com>",
+  databaseURL: "<https://coffe-a2619-default-rtdb.europe-west1.firebasedatabase.app>",
+  projectId:   "coffe-a2619",
+  storageBucket: "coffe-a2619.firebasestorage.app",
+});
+const db = getDatabase(app);
+
+let groupCode   = null;
+let myId        = null;
+let myName      = null;
+let groupData   = { name:'', members:{}, expenses:{} };
+let unsubscribe = null;
+
+function myUserId() {
+  let id = localStorage.getItem('splits_uid');
+  if (!id) {
+    id = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+    localStorage.setItem('splits_uid', id);
+  }
+  return id;
+}
+
+function genCode() {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6}, () => abc[Math.random()*abc.length|0]).join('');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function initials(name) {
+  return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+window.homeTab = function(tab) {
+  document.getElementById('ht-create').classList.toggle('active', tab==='create');
+  document.getElementById('ht-join').classList.toggle('active', tab==='join');
+  document.getElementById('create-tab').style.display = tab==='create' ? '' : 'none';
+  document.getElementById('join-tab').style.display   = tab==='join'   ? '' : 'none';
+};
+
+window.createGroup = async function() {
+  const gName = document.getElementById('c-group').value.trim();
+  const uName = document.getElementById('c-user').value.trim();
+  if (!gName) { toast('אנא הכנס שם קבוצה'); return; }
+  if (!uName) { toast('אנא הכנס את שמך');   return; }
+
+  const uid = myUserId();
+  let code;
+  for (let i=0; i<5; i++) {
+    code = genCode();
+    if (!(await get(ref(db,`splits/${code}`))).exists()) break;
+  }
+
+  await set(ref(db,`splits/${code}`), {
+    name: gName,
+    createdAt: Date.now(),
+    members: { [uid]: { name: uName, joinedAt: Date.now() } }
+  });
+
+  saveSession(code, uid, uName);
+  enterGroup(code, uid, uName);
+};
+
+window.joinGroup = async function() {
+  const code  = document.getElementById('j-code').value.trim().toUpperCase();
+  const uName = document.getElementById('j-user').value.trim();
+  if (code.length !== 6) { toast('קוד חייב להיות 6 תווים'); return; }
+  if (!uName)            { toast('אנא הכנס את שמך');        return; }
+
+  const snap = await get(ref(db,`splits/${code}`));
+  if (!snap.exists()) { toast('קבוצה לא נמצאה – בדוק את הקוד'); return; }
+
+  const uid = myUserId();
+  await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now() });
+
+  saveSession(code, uid, uName);
+  enterGroup(code, uid, uName);
+};
+
+function saveSession(code, uid, name) {
+  localStorage.setItem('splits_session', JSON.stringify({ code, uid, name }));
+}
+
+function enterGroup(code, uid, name) {
+  groupCode = code; myId = uid; myName = name;
+
+  document.getElementById('home-screen').classList.remove('active');
+  document.getElementById('group-screen').classList.add('active');
+
+  if (unsubscribe) unsubscribe();
+  unsubscribe = onValue(ref(db,`splits/${code}`), snap => {
+    groupData = snap.val() || {};
+    if (!groupData.members)  groupData.members  = {};
+    if (!groupData.expenses) groupData.expenses = {};
+    render();
+  });
+}
+
+window.leaveGroup = function() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  localStorage.removeItem('splits_session');
+  groupCode = myId = myName = null;
+  document.getElementById('group-screen').classList.remove('active');
+  document.getElementById('home-screen').classList.add('active');
+};
+
+window.copyCode = function() {
+  navigator.clipboard.writeText(groupCode)
+    .then(() => toast('קוד הועתק: ' + groupCode))
+    .catch(() => toast('קוד: ' + groupCode));
+};
+
+window.switchTab = function(tab) {
+  const order = ['expenses','balances','transfers'];
+  document.querySelectorAll('.tab-btn').forEach((b,i) =>
+    b.classList.toggle('active', order[i]===tab));
+  document.querySelectorAll('.tab-content').forEach(tc =>
+    tc.classList.toggle('active', <tc.id> === 'tab-'+tab));
+};
+
+window.addExpense = async function() {
+  const desc   = document.getElementById('e-desc').value.trim();
+  const amount = parseFloat(document.getElementById('e-amount').value);
+  const paidBy = document.getElementById('e-paidby').value;
+
+  if (!desc)           { toast('אנא הכנס תיאור');    return; }
+  if (!amount || amount<=0) { toast('אנא הכנס סכום תקין'); return; }
+
+  const member = groupData.members[paidBy];
+  await push(ref(db,`splits/${groupCode}/expenses`), {
+    description: desc,
+    amount,
+    paidBy,
+    payerName: member?.name || 'לא ידוע',
+    timestamp: Date.now()
+  });
+
+  document.getElementById('e-desc').value   = '';
+  document.getElementById('e-amount').value = '';
+  toast('הוצאה נוספה ✓');
+};
+
+window.deleteExpense = async function(expId) {
+  await remove(ref(db,`splits/${groupCode}/expenses/${expId}`));
+  toast('הוצאה נמחקה');
+};
+
+window.toggleAddMember = function() {
+  const row = document.getElementById('add-member-row');
+  const vis = row.style.display !== 'none';
+  row.style.display = vis ? 'none' : 'flex';
+  if (!vis) document.getElementById('new-member').focus();
+};
+
+window.addMember = async function() {
+  const name = document.getElementById('new-member').value.trim();
+  if (!name) { toast('אנא הכנס שם'); return; }
+  const uid = 'manual_' + Date.now().toString(36);
+  await update(ref(db,`splits/${groupCode}/members/${uid}`), { name, joinedAt: Date.now(), manual:true });
+  document.getElementById('new-member').value = '';
+  toggleAddMember();
+  toast(`${name} נוסף לקבוצה ✓`);
+};
+
+function calcBalances() {
+  const members  = groupData.members;
+  const expenses = Object.values(groupData.expenses || {});
+  const ids      = Object.keys(members);
+  if (!ids.length) return {};
+
+  const total     = expenses.reduce((s,e) => s + (e.amount||0), 0);
+  const fairShare = total / ids.length;
+
+  const bal = {};
+  ids.forEach(id => bal[id] = -fairShare);
+  expenses.forEach(e => { if (e.paidBy in bal) bal[e.paidBy] += e.amount||0; });
+  ids.forEach(id => { bal[id] = Math.round(bal[id]*100)/100; });
+  return bal;
+}
+
+function calcTransfers(bal) {
+  const creds  = [], debts = [];
+  Object.entries(bal).forEach(([id, b]) => {
+    if (b >  0.01) creds.push({ id, v: b });
+    if (b < -0.01) debts.push({ id, v: -b });
+  });
+  creds.sort((a,b) => b.v - a.v);
+  debts.sort((a,b) => b.v - a.v);
+
+  const out = [];
+  let ci=0, di=0;
+  while (ci < creds.length && di < debts.length) {
+    const c = creds[ci], d = debts[di];
+    const amt = Math.min(c.v, d.v);
+    if (amt > 0.01) out.push({ from: <d.id>, to: <c.id>, amount: Math.round(amt*100)/100 });
+    c.v -= amt; d.v -= amt;
+    if (c.v < 0.01) ci++;
+    if (d.v < 0.01) di++;
+  }
+  return out;
+}
+
+const ICONS = ['🍕','🛒','⛽','🏨','🎉','🍺','☕','🎭','🍔','✈️','🏖️','🎸'];
+function icon(str) { return ICONS[str.charCodeAt(0) % ICONS.length]; }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('he-IL', { day:'numeric', month:'short' }); }
+
+function render() {
+  const members  = groupData.members  || {};
+  const expenses = groupData.expenses || {};
+  const mIds     = Object.keys(members);
+  const expList  = Object.entries(expenses);
+
+  document.getElementById('g-name').textContent = groupData.name || '';
+  document.getElementById('g-code').textContent = groupCode;
+
+  const total = expList.reduce((s,[,e]) => s + (e.amount||0), 0);
+  document.getElementById('s-total').textContent   = '₪' + total.toFixed(2);
+  document.getElementById('s-share').textContent   = mIds.length ? '₪' + (total/mIds.length).toFixed(2) : '₪0';
+  document.getElementById('s-members').textContent = mIds.length;
+
+  const sel = document.getElementById('e-paidby');
+  const prev = sel.value;
+  sel.innerHTML = mIds.map(id =>
+    `<option value="${id}" ${id===myId?'selected':''}>${members[id].name}</option>`
+  ).join('');
+  if (prev && mIds.includes(prev)) sel.value = prev;
+
+  document.getElementById('members-list').innerHTML = mIds.length
+    ? mIds.map(id => {
+        const m = members[id];
+        return `<div class="member-chip">
+          <div class="avatar">${initials(m.name)}</div>
+          <span>${m.name}</span>
+          ${id===myId ? '<span class="me-tag">אני</span>' : ''}
+        </div>`;
+      }).join('')
+    : '<span style="font-size:13px;color:var(--text-light)">אין חברים עדיין</span>';
+
+  const esSorted = expList.sort((a,b) => b[1].timestamp - a[1].timestamp);
+  document.getElementById('expenses-list').innerHTML = esSorted.length
+    ? esSorted.map(([id,e]) => `
+        <div class="expense-item">
+          <div class="exp-icon">${icon(e.description)}</div>
+          <div class="exp-info">
+            <div class="exp-desc">${e.description}</div>
+            <div class="exp-meta">שילם: ${e.payerName||'?'} &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
+          </div>
+          <div class="exp-amount">₪${(e.amount||0).toFixed(2)}</div>
+          ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
+        </div>`).join('')
+    : `<div class="empty"><div class="empty-icon">💳</div><h3>אין הוצאות עדיין</h3><p>הוסף את ההוצאה הראשונה</p></div>`;
+
+  const bal = calcBalances();
+  document.getElementById('balances-list').innerHTML = mIds.length
+    ? mIds.map(id => {
+        const b = bal[id]||0;
+        const cls = b>0.01?'pos': b<-0.01?'neg':'zero';
+        const sign = b>0?'+':'';
+        return `<div class="balance-item">
+          <div class="avatar">${initials(members[id].name)}</div>
+          <span class="balance-name">${members[id].name}${id===myId?' <span style="font-size:11px;color:var(--text-light)">(אני)</span>':''}</span>
+          <span class="balance-amount ${cls}">${sign}₪${Math.abs(b).toFixed(2)}</span>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="empty-icon">📊</div><h3>אין חברים עדיין</h3></div>';
+
+  const transfers = calcTransfers(bal);
+  document.getElementById('transfers-list').innerHTML = transfers.length
+    ? transfers.map(t => {
+        const fName = members[t.from]?.name || '?';
+        const tName = members[<t.to>]?.name   || '?';
+        return `<div class="transfer-item">
+          <div class="avatar" style="background:var(--danger)">${initials(fName)}</div>
+          <span class="tr-from">${fName}</span>
+          <span class="tr-arrow">→</span>
+          <div class="avatar" style="background:var(--success)">${initials(tName)}</div>
+          <span class="tr-to">${tName}</span>
+          <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
+        </div>`;
+      }).join('')
+    : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
+}
+
+(async () => {
+  const raw = localStorage.getItem('splits_session');
+  if (!raw) return;
+  try {
+    const { code, uid, name } = JSON.parse(raw);
+    const snap = await get(ref(db,`splits/${code}`));
+    if (snap.exists()) { myId=uid; myName=name; enterGroup(code,uid,name); }
+    else localStorage.removeItem('splits_session');
+  } catch { localStorage.removeItem('splits_session'); }
+})();
+</script>
+</body>
+</html>
