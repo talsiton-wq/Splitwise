@@ -432,7 +432,7 @@ function renderMyGroups() {
         <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
         <div class="saved-group-info">
           <div class="saved-group-name">${g.groupName || g.code}</div>
-          <div class="saved-group-meta">כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
+          <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
         <span class="sgi-arrow">▼</span>
         <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה" style="flex-shrink:0">✕</button>
@@ -482,7 +482,7 @@ async function loadGroupDetails(idx) {
           ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:10px">${initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
         </div>
         <div class="sgi-actions">
-          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">כנס לקבוצה ←</button>
+          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">פתח קבוצה ←</button>
           <button class="btn btn-secondary" onclick="shareGroupLink('${g.code}')" title="שתף קישור הצטרפות">🔗 שתף</button>
         </div>
       </div>`;
@@ -721,7 +721,7 @@ function render() {
         return `<div class="transfer-item">
           <div class="avatar" style="background:var(--danger)">${initials(fName)}</div>
           <span class="tr-from">${fName}</span>
-          <span class="tr-arrow">→</span>
+          <span class="tr-arrow">←</span>
           <div class="avatar" style="background:var(--success)">${initials(tName)}</div>
           <span class="tr-to">${tName}</span>
           <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
