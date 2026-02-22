@@ -250,8 +250,11 @@
   <div class="group-header">
     <div>
       <h1 id="g-name"></h1>
-      <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
-        📋 <span id="g-code"></span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+        <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
+          📋 <span id="g-code"></span>
+        </div>
+        <span id="s-members" style="font-size:12px;opacity:.7;font-weight:600">👥 0</span>
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
@@ -774,8 +777,9 @@ function render() {
   const mIds     = Object.keys(members);
   const expList  = Object.entries(expenses);
 
-  document.getElementById('g-name').textContent = groupData.name || '';
-  document.getElementById('g-code').textContent = groupCode;
+  document.getElementById('g-name').textContent    = groupData.name || '';
+  document.getElementById('g-code').textContent    = groupCode;
+  document.getElementById('s-members').textContent = `👥 ${mIds.length}`;
 
   const total = expList.reduce((s,[,e]) => s + (e.amountILS ?? e.amount ?? 0), 0);
   document.getElementById('s-total').textContent = '₪' + total.toFixed(2);
