@@ -288,11 +288,18 @@
     .reaction-add { background: none; border: 1.5px dashed var(--border); border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all .15s; font-family: inherit; }
     .reaction-add:hover { border-color: var(--primary); color: var(--primary); }
 
-    /* ── Custom split amount inputs ─────────────────────────── */
-    .split-member-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 0; }
+    /* ── Split panel ─────────────────────────────────────────── */
+    .split-mode-row { display: flex; gap: 6px; margin-bottom: 10px; width: 100%; }
+    .split-mode-btn { flex: 1; padding: 8px; border: 1.5px solid var(--border); border-radius: 8px; background: none; color: var(--text-light); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; }
+    .split-mode-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    [data-theme="dark"] .split-mode-btn { background: #1e293b; }
+    .split-member-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .split-member-row:last-of-type { border-bottom: none; }
     .split-member-name { flex: 1; font-size: 13px; font-weight: 600; }
-    .split-amount-input { width: 90px !important; padding: 6px 8px !important; font-size: 13px !important; text-align: left; }
-    .split-remaining-row { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; gap: 8px; }
+    .split-amount-input { width: 90px !important; padding: 6px 8px !important; font-size: 13px !important; text-align: right; direction: ltr; }
+    .split-share-lbl { font-size: 14px; font-weight: 700; color: var(--primary); min-width: 70px; text-align: left; flex-shrink: 0; }
+    .split-chk:not(:checked) ~ .split-member-name { opacity: .45; }
+    .split-remaining-row { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; gap: 8px; }
     .split-remaining-ok  { color: var(--success); font-weight: 700; }
     .split-remaining-err { color: var(--danger);  font-weight: 700; }
 
@@ -413,8 +420,6 @@
     </div>
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
       <div style="display:flex;gap:6px">
-        <button class="dark-toggle" id="dark-btn" onclick="toggleDark()" title="מצב לילה">🌙</button>
-        <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
       </div>
       <button class="leave-btn" onclick="shareGroupLink()" title="שלח קישור הצטרפות">🔗 שתף קישור</button>
       <button class="leave-btn" id="close-group-btn" onclick="toggleCloseGroup()" style="font-size:12px">🔒 סגרנו חשבון</button>
@@ -461,11 +466,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>סכום</label>
-          <input id="e-amount" type="number" placeholder="0.00" min="0.01" step="0.01">
+          <input id="e-amount" type="number" placeholder="0.00" min="0.01" step="0.01" oninput="onExpAmountChange()">
         </div>
         <div class="form-group" style="max-width:100px">
           <label>מטבע</label>
-          <select id="e-currency">
+          <select id="e-currency" onchange="onExpAmountChange()">
             <option value="ILS">₪ שקל</option>
             <option value="USD">$ דולר</option>
             <option value="EUR">€ יורו</option>
@@ -733,14 +738,14 @@ function renderMyGroups() {
     <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
       <div class="sgi-header">
         <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
-        <div class="saved-group-info" style="cursor:pointer" onclick="toggleGroupDetails(${i})">
+        <div class="saved-group-info">
           <div class="saved-group-name">${g.groupName || g.code}</div>
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
-        <button class="btn btn-${expandedGroupIdx === i ? 'secondary' : 'primary'} btn-sm" onclick="toggleGroupDetails(${i})" style="flex-shrink:0;font-size:13px">
-          ${expandedGroupIdx === i ? '✕ סגור' : 'פתח ▼'}
+        <button class="btn btn-${expandedGroupIdx === i ? 'secondary' : 'primary'} btn-sm" onclick="toggleGroupDetails(${i})" style="flex-shrink:0;font-size:13px;white-space:nowrap">
+          ${expandedGroupIdx === i ? '✕ סגור' : 'פתח קבוצה'}
         </button>
-        <button class="btn-ghost" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה" style="flex-shrink:0;color:var(--danger);font-size:18px;padding:4px 6px">🗑</button>
+        <button class="btn-ghost" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="הסר מהרשימה" style="flex-shrink:0;color:var(--danger);padding:5px 7px;font-size:17px">🗑</button>
       </div>
       <div class="sgi-details" id="sgd-${i}">
         <div class="sgi-detail-content">
@@ -787,7 +792,7 @@ async function loadGroupDetails(idx) {
           ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:${members[id].avatar?'13px':'10px'};background:${avatarColor(id)}">${members[id].avatar||initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
         </div>
         <div class="sgi-actions">
-          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">פתח קבוצה ←</button>
+          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">כנס לקבוצה ←</button>
           <button class="btn btn-secondary" onclick="shareGroupLink('${g.code}')" title="שתף קישור הצטרפות">🔗 שתף</button>
         </div>
       </div>`;
@@ -946,62 +951,95 @@ window.toggleCloseGroup = async function() {
   await update(ref(db,`splits/${groupCode}`), { closed: !isClosed });
 };
 
-// ── Custom split amounts ────────────────────────────────────
+// ── Split panel ─────────────────────────────────────────────
+let splitMode = 'equal'; // 'equal' | 'custom'
+
 window.toggleSplitMembers = function() {
   const on  = document.getElementById('e-unequal').checked;
   const bar = document.getElementById('split-members-bar');
   bar.style.display = on ? 'flex' : 'none';
-  if (on) { renderSplitMembersBar(); autoFillEqual(); }
+  if (on) { splitMode = 'equal'; renderSplitMembersBar(); }
 };
+
+function getCheckedMemberIds() {
+  return Object.keys(groupData.members || {}).filter(id => {
+    const chk = document.getElementById(`split-chk-${id}`);
+    return !chk || chk.checked;
+  });
+}
+
 function renderSplitMembersBar() {
   const bar     = document.getElementById('split-members-bar');
   const members = groupData.members || {};
   bar.innerHTML =
-    Object.entries(members).map(([id, m]) =>
-      `<div class="split-member-row">
+    `<div class="split-mode-row">
+       <button type="button" class="split-mode-btn${splitMode==='equal'?' active':''}" onclick="setSplitMode('equal')">⚡ חלוקה שווה</button>
+       <button type="button" class="split-mode-btn${splitMode==='custom'?' active':''}" onclick="setSplitMode('custom')">✏️ סכומים מותאמים</button>
+     </div>`
+    + Object.entries(members).map(([id, m]) =>
+      `<label class="split-member-row" style="cursor:pointer">
+        <input type="checkbox" id="split-chk-${id}" checked class="split-chk" onchange="onSplitChange()" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0">
         <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'13px':'10px'};width:24px;height:24px;flex-shrink:0">${m.avatar||initials(m.name)}</div>
         <span class="split-member-name">${m.name}</span>
-        <input type="number" class="split-amount-input" id="split-amt-${id}"
-               placeholder="0.00" step="0.01" min="0"
-               oninput="updateSplitRemaining()">
-      </div>`
+        ${splitMode === 'equal'
+          ? `<span class="split-share-lbl" id="split-share-${id}">—</span>`
+          : `<input type="number" class="split-amount-input" id="split-amt-${id}" dir="ltr" placeholder="0.00" step="0.01" min="0" oninput="updateSplitRemaining()">`
+        }
+      </label>`
     ).join('')
     + `<div class="split-remaining-row">
-         <span id="split-remaining" class="split-remaining-err">הכנס סכומים</span>
-         <button type="button" class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:12px;padding:5px 12px" onclick="autoFillEqual()" ondblclick="clearSplitAmounts()" title="לחץ כפול כדי לנקות">⚡ חלק שווה</button>
+         <span id="split-remaining" class="split-remaining-err">בחר משתתפים</span>
+         ${splitMode==='custom'
+           ? `<button type="button" class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:12px;padding:5px 12px" onclick="autoFillCustomEqual()" ondblclick="clearSplitAmounts()" title="לחץ כפול לניקוי">⚡ חלק שווה</button>`
+           : ''}
        </div>`;
+  updateSplitDisplay();
 }
-window.clearSplitAmounts = function() {
-  const members = groupData.members || {};
-  Object.keys(members).forEach(id => {
-    const inp = document.getElementById(`split-amt-${id}`);
-    if (inp) inp.value = '';
-  });
-  updateSplitRemaining();
+
+window.setSplitMode = function(mode) { splitMode = mode; renderSplitMembersBar(); };
+window.onSplitChange = function() { updateSplitDisplay(); };
+window.onExpAmountChange = function() {
+  if (document.getElementById('e-unequal')?.checked) updateSplitDisplay();
 };
-window.autoFillEqual = function() {
-  const members = groupData.members || {};
-  const mIds    = Object.keys(members);
-  if (!mIds.length) return;
-  const rawAmt  = parseFloat(document.getElementById('e-amount').value) || 0;
-  const currency = document.getElementById('e-currency').value || 'ILS';
-  // use live rates if available, else approximate
+
+function updateSplitDisplay() {
+  if (splitMode === 'equal') updateEqualDisplay();
+  else updateSplitRemaining();
+}
+
+function updateEqualDisplay() {
+  const checked  = getCheckedMemberIds();
+  const rawAmt   = parseFloat(document.getElementById('e-amount')?.value) || 0;
+  const currency = document.getElementById('e-currency')?.value || 'ILS';
   const totalILS = toILS(rawAmt, currency);
-  const share    = +(totalILS / mIds.length).toFixed(2);
-  mIds.forEach((id, i) => {
-    const inp = document.getElementById(`split-amt-${id}`);
-    if (!inp) return;
-    // last person gets the remainder to avoid rounding errors
-    inp.value = (i === mIds.length - 1)
-      ? (totalILS - share * (mIds.length - 1)).toFixed(2)
-      : share.toFixed(2);
+  const share    = checked.length ? +(totalILS / checked.length).toFixed(2) : 0;
+  const lastShare= checked.length ? +(totalILS - share*(checked.length-1)).toFixed(2) : 0;
+  Object.keys(groupData.members || {}).forEach(id => {
+    const lbl = document.getElementById(`split-share-${id}`);
+    const chk = document.getElementById(`split-chk-${id}`);
+    if (!lbl) return;
+    if (chk?.checked && checked.length && rawAmt) {
+      const isLast = id === checked[checked.length-1];
+      lbl.textContent = `₪${(isLast ? lastShare : share).toFixed(2)}`;
+      lbl.style.opacity = '1'; lbl.style.color = 'var(--primary)';
+    } else {
+      lbl.textContent = '—';
+      lbl.style.opacity = '0.35'; lbl.style.color = 'var(--text-light)';
+    }
   });
-  updateSplitRemaining();
-};
+  const el = document.getElementById('split-remaining');
+  if (!el) return;
+  if (!checked.length) { el.textContent = 'בחר לפחות משתתף אחד'; el.className = 'split-remaining-err'; return; }
+  if (!rawAmt) { el.textContent = 'הכנס סכום'; el.className = 'split-remaining-err'; return; }
+  el.textContent = `✓ ${checked.length} משתתפים — ₪${share.toFixed(2)} לאחד`;
+  el.className = 'split-remaining-ok';
+}
+
 window.updateSplitRemaining = function() {
-  const members  = groupData.members || {};
+  if (splitMode === 'equal') { updateEqualDisplay(); return; }
+  const checked  = getCheckedMemberIds();
   let allocated  = 0;
-  Object.keys(members).forEach(id => {
+  checked.forEach(id => {
     const inp = document.getElementById(`split-amt-${id}`);
     if (inp) allocated += parseFloat(inp.value) || 0;
   });
@@ -1011,16 +1049,48 @@ window.updateSplitRemaining = function() {
   const diff     = totalILS - allocated;
   const el       = document.getElementById('split-remaining');
   if (!el) return;
-  el.textContent  = Math.abs(diff) < 0.02
+  el.textContent = Math.abs(diff) < 0.02
     ? `✓ מוקצה ₪${allocated.toFixed(2)}`
     : `מוקצה ₪${allocated.toFixed(2)} מתוך ₪${totalILS.toFixed(2)} (${diff > 0 ? 'חסר' : 'עודף'} ₪${Math.abs(diff).toFixed(2)})`;
   el.className = Math.abs(diff) < 0.02 ? 'split-remaining-ok' : 'split-remaining-err';
 };
+
+window.autoFillCustomEqual = function() {
+  const checked  = getCheckedMemberIds();
+  if (!checked.length) return;
+  const rawAmt   = parseFloat(document.getElementById('e-amount').value) || 0;
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  const totalILS = toILS(rawAmt, currency);
+  const share    = +(totalILS / checked.length).toFixed(2);
+  checked.forEach((id, i) => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (!inp) return;
+    inp.value = (i === checked.length-1)
+      ? (totalILS - share*(checked.length-1)).toFixed(2)
+      : share.toFixed(2);
+  });
+  updateSplitRemaining();
+};
+
+window.clearSplitAmounts = function() {
+  Object.keys(groupData.members || {}).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (inp) inp.value = '';
+  });
+  updateSplitRemaining();
+};
+
 function getSplitData() {
   if (!document.getElementById('e-unequal').checked) return null;
-  const members = groupData.members || {};
-  const result  = {};
-  Object.keys(members).forEach(id => {
+  const checked = getCheckedMemberIds();
+  const mIds    = Object.keys(groupData.members || {});
+  if (!checked.length) return null;
+  if (splitMode === 'equal') {
+    if (checked.length === mIds.length) return null; // all members = default equal
+    return checked; // array → equal among selected
+  }
+  const result = {};
+  checked.forEach(id => {
     const inp = document.getElementById(`split-amt-${id}`);
     const val = parseFloat(inp?.value);
     if (val > 0) result[id] = val;
@@ -1093,7 +1163,10 @@ window.addExpense = async function() {
   const payerName = member?.name || 'לא ידוע';
 
   const splitData = getSplitData();
-  if (splitData !== null) {
+  if (Array.isArray(splitData) && splitData.length === 0) {
+    toast('בחר לפחות משתתף אחד לחלוקה'); return;
+  }
+  if (splitData !== null && !Array.isArray(splitData)) {
     const splitTotal = Object.values(splitData).reduce((s,v) => s+v, 0);
     if (Math.abs(splitTotal - amountILS) > 0.10) {
       toast(`סכום החלוקה ₪${splitTotal.toFixed(2)} ≠ סה"כ ₪${amountILS.toFixed(2)}`);
@@ -1118,6 +1191,7 @@ window.addExpense = async function() {
   document.getElementById('e-note').value   = '';
   document.getElementById('e-unequal').checked = false;
   document.getElementById('split-members-bar').style.display = 'none';
+  splitMode = 'equal';
   toast('הוצאה נוספה ✓');
 };
 
