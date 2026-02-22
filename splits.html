@@ -279,14 +279,14 @@
 </div>
 
 <script type="module">
-import { initializeApp }    from '<https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js>';
+import { initializeApp }    from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
 import { getDatabase, ref, set, get, push, update, remove, onValue }
-                             from '<https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js>';
+                             from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
 
 const app = initializeApp({
   apiKey:      "AIzaSyA5psJbM4VDL5Dq3Dd3k1qoojepxtlg7OU",
-  authDomain:  "<coffe-a2619.firebaseapp.com>",
-  databaseURL: "<https://coffe-a2619-default-rtdb.europe-west1.firebasedatabase.app>",
+  authDomain:  "coffe-a2619.firebaseapp.com",
+  databaseURL: "https://coffe-a2619-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:   "coffe-a2619",
   storageBucket: "coffe-a2619.firebasestorage.app",
 });
@@ -407,7 +407,7 @@ window.switchTab = function(tab) {
   document.querySelectorAll('.tab-btn').forEach((b,i) =>
     b.classList.toggle('active', order[i]===tab));
   document.querySelectorAll('.tab-content').forEach(tc =>
-    tc.classList.toggle('active', <tc.id> === 'tab-'+tab));
+    tc.classList.toggle('active', tc.id === 'tab-'+tab));
 };
 
 window.addExpense = async function() {
@@ -484,7 +484,7 @@ function calcTransfers(bal) {
   while (ci < creds.length && di < debts.length) {
     const c = creds[ci], d = debts[di];
     const amt = Math.min(c.v, d.v);
-    if (amt > 0.01) out.push({ from: <d.id>, to: <c.id>, amount: Math.round(amt*100)/100 });
+    if (amt > 0.01) out.push({ from: d.id, to: c.id, amount: Math.round(amt*100)/100 });
     c.v -= amt; d.v -= amt;
     if (c.v < 0.01) ci++;
     if (d.v < 0.01) di++;
@@ -560,7 +560,7 @@ function render() {
   document.getElementById('transfers-list').innerHTML = transfers.length
     ? transfers.map(t => {
         const fName = members[t.from]?.name || '?';
-        const tName = members[<t.to>]?.name   || '?';
+        const tName = members[t.to]?.name   || '?';
         return `<div class="transfer-item">
           <div class="avatar" style="background:var(--danger)">${initials(fName)}</div>
           <span class="tr-from">${fName}</span>
