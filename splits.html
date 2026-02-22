@@ -306,6 +306,7 @@
             <option value="GBP">£ פאונד</option>
             <option value="JPY">¥ ין</option>
             <option value="JOD">JD דינר</option>
+            <option value="HUF">Ft פורינט</option>
           </select>
         </div>
         <div class="form-group">
@@ -437,7 +438,7 @@ async function fetchRates() {
     else throw new Error();
   } catch {
     // fallback approximate rates (1 ILS = X foreign)
-    exchangeRates = { ILS:1, USD:0.273, EUR:0.252, GBP:0.215, JPY:41.5, JOD:0.194 };
+    exchangeRates = { ILS:1, USD:0.273, EUR:0.252, GBP:0.215, JPY:41.5, JOD:0.194, HUF:100.5 };
   }
 }
 function toILS(amount, currency) {
@@ -445,7 +446,7 @@ function toILS(amount, currency) {
   const rate = exchangeRates?.[currency];
   return (rate && rate !== 0) ? +(amount / rate).toFixed(4) : amount;
 }
-const CURR_SYMBOLS = { ILS:'₪', USD:'$', EUR:'€', GBP:'£', JPY:'¥', JOD:'JD' };
+const CURR_SYMBOLS = { ILS:'₪', USD:'$', EUR:'€', GBP:'£', JPY:'¥', JOD:'JD', HUF:'Ft' };
 function currSymbol(c) { return CURR_SYMBOLS[c] || c; }
 
 function myUserId() {
