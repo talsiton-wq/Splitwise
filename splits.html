@@ -142,6 +142,14 @@
       .summary-row { grid-template-columns: 1fr 1fr; }
       .summary-row .summary-card:last-child { grid-column: 1 / -1; }
     }
+
+    #my-groups-section { width: 100%; max-width: 400px; margin-top: 20px; }
+    .my-groups-title { font-size: 13px; font-weight: 700; color: var(--text-light); margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+    .saved-group-item { background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow .15s, transform .15s; }
+    .saved-group-item:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .saved-group-info { flex: 1; min-width: 0; }
+    .saved-group-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-group-meta { font-size: 12px; color: var(--text-light); }
   </style>
 </head>
 <body>
@@ -183,6 +191,11 @@
       </div>
       <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
     </div>
+  </div>
+
+  <div id="my-groups-section" style="display:none">
+    <div class="my-groups-title">הקבוצות שלי</div>
+    <div id="my-groups-list"></div>
   </div>
 </div>
 
@@ -349,7 +362,7 @@ window.createGroup = async function() {
     members: { [uid]: { name: uName, joinedAt: Date.now() } }
   });
 
-  saveSession(code, uid, uName);
+  saveGroupToList(code, uid, uName, gName);
   enterGroup(code, uid, uName);
 };
 
@@ -359,19 +372,76 @@ window.joinGroup = async function() {
   if (code.length !== 6) { toast('קוד חייב להיות 6 תווים'); return; }
   if (!uName)            { toast('אנא הכנס את שמך');        return; }
 
-  const snap = await get(ref(db,`splits/${code}`));
-  if (!snap.exists()) { toast('קבוצה לא נמצאה – בדוק את הקוד'); return; }
+  try {
+    const snap = await get(ref(db,`splits/${code}`));
+    if (!snap.exists()) { toast('קבוצה לא נמצאה – בדוק את הקוד'); return; }
 
-  const uid = myUserId();
-  await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now() });
+    const groupName = snap.val().name || code;
+    const uid = myUserId();
+    await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now() });
 
-  saveSession(code, uid, uName);
-  enterGroup(code, uid, uName);
+    saveGroupToList(code, uid, uName, groupName);
+    enterGroup(code, uid, uName);
+  } catch (err) {
+    console.error('joinGroup error:', err);
+    toast('שגיאה בהצטרפות לקבוצה – נסה שוב');
+  }
 };
 
-function saveSession(code, uid, name) {
-  localStorage.setItem('splits_session', JSON.stringify({ code, uid, name }));
+function getSavedGroups() {
+  try { return JSON.parse(localStorage.getItem('splits_groups') || '[]'); }
+  catch { return []; }
 }
+
+function saveGroupToList(code, uid, myName, groupName) {
+  const groups = getSavedGroups().filter(g => g.code !== code);
+  groups.unshift({ code, uid, myName, groupName, lastAccessed: Date.now() });
+  localStorage.setItem('splits_groups', JSON.stringify(groups.slice(0, 20)));
+}
+
+function renderMyGroups() {
+  const groups = getSavedGroups();
+  const section = document.getElementById('my-groups-section');
+  const list = document.getElementById('my-groups-list');
+  if (!groups.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  list.innerHTML = groups.map((g, i) => `
+    <div class="saved-group-item" onclick="enterSavedGroup(${i})">
+      <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
+      <div class="saved-group-info">
+        <div class="saved-group-name">${g.groupName || g.code}</div>
+        <div class="saved-group-meta">כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה">✕</button>
+    </div>
+  `).join('');
+}
+
+window.enterSavedGroup = async function(idx) {
+  const groups = getSavedGroups();
+  const g = groups[idx];
+  if (!g) return;
+  const snap = await get(ref(db, `splits/${g.code}`));
+  if (!snap.exists()) {
+    toast('קבוצה לא נמצאה – ייתכן שנמחקה');
+    groups.splice(idx, 1);
+    localStorage.setItem('splits_groups', JSON.stringify(groups));
+    renderMyGroups();
+    return;
+  }
+  g.groupName = snap.val().name || g.groupName;
+  g.lastAccessed = Date.now();
+  localStorage.setItem('splits_groups', JSON.stringify(groups));
+  enterGroup(g.code, g.uid, g.myName);
+};
+
+window.removeGroupFromList = function(idx, e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  const groups = getSavedGroups();
+  groups.splice(idx, 1);
+  localStorage.setItem('splits_groups', JSON.stringify(groups));
+  renderMyGroups();
+};
 
 function enterGroup(code, uid, name) {
   groupCode = code; myId = uid; myName = name;
@@ -390,10 +460,10 @@ function enterGroup(code, uid, name) {
 
 window.leaveGroup = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  localStorage.removeItem('splits_session');
   groupCode = myId = myName = null;
   document.getElementById('group-screen').classList.remove('active');
   document.getElementById('home-screen').classList.add('active');
+  renderMyGroups();
 };
 
 window.copyCode = function() {
@@ -573,16 +643,24 @@ function render() {
     : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
 }
 
-(async () => {
+// Migrate old single-session format to new multi-group format
+(function migrateLegacySession() {
   const raw = localStorage.getItem('splits_session');
   if (!raw) return;
   try {
     const { code, uid, name } = JSON.parse(raw);
-    const snap = await get(ref(db,`splits/${code}`));
-    if (snap.exists()) { myId=uid; myName=name; enterGroup(code,uid,name); }
-    else localStorage.removeItem('splits_session');
-  } catch { localStorage.removeItem('splits_session'); }
+    if (code && uid && name) {
+      const groups = getSavedGroups();
+      if (!groups.find(g => g.code === code)) {
+        groups.unshift({ code, uid, myName: name, groupName: code, lastAccessed: Date.now() });
+        localStorage.setItem('splits_groups', JSON.stringify(groups));
+      }
+    }
+  } catch {}
+  localStorage.removeItem('splits_session');
 })();
+
+renderMyGroups();
 </script>
 </body>
 </html>
