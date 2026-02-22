@@ -123,11 +123,11 @@
     .neg { color: var(--danger); }
     .zero { color: var(--text-light); }
 
-    .transfer-item { display: flex; align-items: center; gap: 10px; padding: 13px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
+    .transfer-item { display: flex; align-items: center; gap: 8px; padding: 11px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap; }
     .tr-from { font-weight: 700; color: var(--danger); font-size: 14px; }
     .tr-to   { font-weight: 700; color: var(--success); font-size: 14px; }
     .tr-arrow { font-size: 16px; color: var(--text-light); }
-    .tr-amount { margin-right: auto; font-size: 17px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+    .tr-amount { font-size: 17px; font-weight: 800; color: var(--primary); white-space: nowrap; }
 
     .add-form { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow); }
     .form-row { display: flex; gap: 10px; }
@@ -209,8 +209,23 @@
     [data-theme="dark"] select { background: #0f172a; color: var(--text); }
     [data-theme="dark"] input:focus,
     [data-theme="dark"] select:focus { background: #1e293b; }
+    [data-theme="dark"] .transfer-item { background: #1e293b; border: 1px solid var(--border); }
+    [data-theme="dark"] .member-chip { background: #1e293b; }
+    [data-theme="dark"] .split-members-bar { background: #1e293b; }
+    [data-theme="dark"] .sgi-stat { background: #0f172a; }
+    [data-theme="dark"] .reaction-btn { background: #1e293b; }
+    [data-theme="dark"] .avatar-opt { background: #1e293b; }
+    [data-theme="dark"] .btn-secondary { background: #1e293b; }
+    [data-theme="dark"] .summary-card { background: #1e293b; }
+    [data-theme="dark"] .tr-copy { background: rgba(99,102,241,.22); color: var(--primary-light); }
+    [data-theme="dark"] .tr-copy:hover { background: rgba(99,102,241,.35); }
+    [data-theme="dark"] .expense-item.payment-item { background: rgba(16,185,129,.1); }
+    [data-theme="dark"] .exp-split-tag { background: rgba(99,102,241,.22); }
+    [data-theme="dark"] .toast { background: #334155; }
     .dark-toggle { background: rgba(255,255,255,.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
     .dark-toggle:hover { background: rgba(255,255,255,.28); }
+    .dark-toggle-home { background: none; border: 1.5px solid var(--border); color: var(--text-light); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 17px; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
+    .dark-toggle-home:hover { border-color: var(--primary); color: var(--primary); background: rgba(79,70,229,.07); }
 
     /* ── Group name / emoji edit ────────────────────────────── */
     .g-name-wrap { display: flex; align-items: center; gap: 6px; }
@@ -229,7 +244,9 @@
     /* ── Unequal split ──────────────────────────────────────── */
     .unequal-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; user-select: none; }
     .unequal-toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
-    .unequal-toggle-row span { font-size: 13px; font-weight: 600; color: var(--text-light); }
+    .unequal-toggle-row span { font-size: 13px; font-weight: 600; color: var(--primary); }
+    .unequal-toggle-row { background: rgba(79,70,229,.06); border: 1.5px solid rgba(79,70,229,.2); border-radius: 8px; padding: 8px 12px; }
+    [data-theme="dark"] .unequal-toggle-row { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.3); }
     .split-members-bar { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; animation: fadeSlideDown .18s ease; }
     .split-member-check { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px 8px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); transition: all .15s; }
     .split-member-check input { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
@@ -334,6 +351,7 @@
   <div class="home-actions">
     <button class="btn btn-primary home-action-btn" onclick="toggleHomeForm('create')">✨ קבוצה חדשה</button>
     <button class="btn btn-secondary home-action-btn" onclick="toggleHomeForm('join')">🚀 הצטרף לקבוצה</button>
+    <button class="dark-toggle-home" id="dark-btn-home" onclick="toggleDark()" title="מצב לילה">🌙</button>
   </div>
 
   <div id="create-form-card" class="home-card" style="display:none">
@@ -713,14 +731,16 @@ function renderMyGroups() {
   section.style.display = '';
   list.innerHTML = groups.map((g, i) => `
     <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
-      <div class="sgi-header" onclick="toggleGroupDetails(${i})">
+      <div class="sgi-header">
         <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
-        <div class="saved-group-info">
+        <div class="saved-group-info" style="cursor:pointer" onclick="toggleGroupDetails(${i})">
           <div class="saved-group-name">${g.groupName || g.code}</div>
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
-        <span class="sgi-arrow">▼</span>
-        <button class="btn btn-secondary btn-sm" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה" style="flex-shrink:0;color:var(--danger)">🗑</button>
+        <button class="btn btn-${expandedGroupIdx === i ? 'secondary' : 'primary'} btn-sm" onclick="toggleGroupDetails(${i})" style="flex-shrink:0;font-size:13px">
+          ${expandedGroupIdx === i ? '✕ סגור' : 'פתח ▼'}
+        </button>
+        <button class="btn-ghost" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה" style="flex-shrink:0;color:var(--danger);font-size:18px;padding:4px 6px">🗑</button>
       </div>
       <div class="sgi-details" id="sgd-${i}">
         <div class="sgi-detail-content">
@@ -856,16 +876,23 @@ function enterGroup(code, uid, name) {
 }
 
 // ── Dark mode ──────────────────────────────────────────────
+function syncDarkBtns(dark) {
+  const icon = dark ? '☀️' : '🌙';
+  const b1 = document.getElementById('dark-btn');
+  const b2 = document.getElementById('dark-btn-home');
+  if (b1) b1.textContent = icon;
+  if (b2) b2.textContent = icon;
+}
 function initDark() {
   const dark = localStorage.getItem('splits_dark') === '1';
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
-  document.getElementById('dark-btn').textContent = dark ? '☀️' : '🌙';
+  syncDarkBtns(dark);
 }
 window.toggleDark = function() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
   localStorage.setItem('splits_dark', isDark ? '0' : '1');
-  document.getElementById('dark-btn').textContent = isDark ? '🌙' : '☀️';
+  syncDarkBtns(!isDark);
 };
 
 // ── Group emoji picker ─────────────────────────────────────
@@ -941,9 +968,17 @@ function renderSplitMembersBar() {
     ).join('')
     + `<div class="split-remaining-row">
          <span id="split-remaining" class="split-remaining-err">הכנס סכומים</span>
-         <button type="button" class="btn-ghost" style="font-size:12px;padding:4px 8px" onclick="autoFillEqual()">⚡ חלק שווה</button>
+         <button type="button" class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:12px;padding:5px 12px" onclick="autoFillEqual()" ondblclick="clearSplitAmounts()" title="לחץ כפול כדי לנקות">⚡ חלק שווה</button>
        </div>`;
 }
+window.clearSplitAmounts = function() {
+  const members = groupData.members || {};
+  Object.keys(members).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (inp) inp.value = '';
+  });
+  updateSplitRemaining();
+};
 window.autoFillEqual = function() {
   const members = groupData.members || {};
   const mIds    = Object.keys(members);
@@ -1140,6 +1175,7 @@ window.toggleReaction = async function(expId, emoji) {
 
 window.deleteExpense = async function(expId) {
   const exp = groupData.expenses[expId];
+  if (!confirm(`למחוק את ההוצאה "${exp?.description || ''}"?`)) return;
   if (exp) {
     await push(ref(db,`splits/${groupCode}/log`), {
       type: 'delete', expId,
@@ -1396,8 +1432,8 @@ function render() {
           <span class="tr-arrow">←</span>
           <div class="avatar" style="background:${avatarColor(t.to)};font-size:${members[t.to]?.avatar?'14px':'11px'}">${members[t.to]?.avatar||initials(tName)}</div>
           <span class="tr-to">${tName}</span>
-          <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
-          <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:6px;margin-right:auto;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+            <span class="tr-amount" style="margin-right:0">₪${t.amount.toFixed(2)}</span>
             <button class="tr-copy" onclick="copyReminder('${fName}','${tName}',${t.amount.toFixed(2)})" title="העתק תזכורת">📋 העתק</button>
             <button class="tr-copy" style="background:rgba(16,185,129,.12);color:var(--success)" onclick="recordPayment('${t.from}','${t.to}',${t.amount.toFixed(2)})" title="סמן כשולם">✅ שולם</button>
           </div>
@@ -1452,6 +1488,7 @@ function render() {
 renderAvatarPicker('ap-create', 'create');
 renderAvatarPicker('ap-join', 'join');
 fetchRates(); // preload exchange rates
+initDark();   // apply saved dark preference immediately
 
 // Handle invite link: splits.html?code=ABCDEF
 (async () => {
