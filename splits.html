@@ -189,6 +189,11 @@
     .invite-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; text-align: center; }
     .invite-banner h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
     .invite-banner p { font-size: 13px; opacity: .85; margin-bottom: 14px; }
+
+    .home-actions { display: flex; gap: 10px; margin-bottom: 14px; }
+    .home-action-btn { flex: 1; padding: 14px 10px; font-size: 15px; font-weight: 700; }
+    @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .home-card.opening { animation: fadeSlideDown .22s ease; }
   </style>
 </head>
 <body>
@@ -200,44 +205,42 @@
   <h1 class="app-title">Splits</h1>
   <p class="app-subtitle">חלקו הוצאות בקלות עם חברים ומשפחה</p>
 
-  <div class="home-card">
-    <div class="home-toggle">
-      <button id="ht-create" class="active" onclick="homeTab('create')">קבוצה חדשה</button>
-      <button id="ht-join"                   onclick="homeTab('join')">הצטרף לקבוצה</button>
-    </div>
+  <div class="home-actions">
+    <button class="btn btn-primary home-action-btn" onclick="toggleHomeForm('create')">✨ קבוצה חדשה</button>
+    <button class="btn btn-secondary home-action-btn" onclick="toggleHomeForm('join')">🚀 הצטרף לקבוצה</button>
+  </div>
 
-    <div id="create-tab">
-      <div class="form-group">
-        <label>שם הקבוצה</label>
-        <input id="c-group" type="text" placeholder='למשל: "טיול לאילת"' maxlength="50">
-      </div>
-      <div class="form-group">
-        <label>השם שלך</label>
-        <input id="c-user" type="text" placeholder="הכנס את שמך" maxlength="30">
-      </div>
-      <div class="form-group avatar-picker-wrap">
-        <label>האווטאר שלך</label>
-        <div class="avatar-picker" id="ap-create"></div>
-      </div>
-      <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
+  <div id="create-form-card" class="home-card" style="display:none">
+    <div class="form-group">
+      <label>שם הקבוצה</label>
+      <input id="c-group" type="text" placeholder='למשל: "טיול לאילת"' maxlength="50">
     </div>
+    <div class="form-group">
+      <label>השם שלך</label>
+      <input id="c-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+    </div>
+    <div class="form-group avatar-picker-wrap">
+      <label>האווטאר שלך</label>
+      <div class="avatar-picker" id="ap-create"></div>
+    </div>
+    <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
+  </div>
 
-    <div id="join-tab" style="display:none">
-      <div class="form-group">
-        <label>קוד קבוצה</label>
-        <input id="j-code" type="text" placeholder="6 תווים, למשל: ABC123" maxlength="6"
-               oninput="this.value=this.value.toUpperCase()">
-      </div>
-      <div class="form-group">
-        <label>השם שלך</label>
-        <input id="j-user" type="text" placeholder="הכנס את שמך" maxlength="30">
-      </div>
-      <div class="form-group avatar-picker-wrap">
-        <label>האווטאר שלך</label>
-        <div class="avatar-picker" id="ap-join"></div>
-      </div>
-      <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
+  <div id="join-form-card" class="home-card" style="display:none">
+    <div class="form-group">
+      <label>קוד קבוצה</label>
+      <input id="j-code" type="text" placeholder="6 תווים, למשל: ABC123" maxlength="6"
+             oninput="this.value=this.value.toUpperCase()">
     </div>
+    <div class="form-group">
+      <label>השם שלך</label>
+      <input id="j-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+    </div>
+    <div class="form-group avatar-picker-wrap">
+      <label>האווטאר שלך</label>
+      <div class="avatar-picker" id="ap-join"></div>
+    </div>
+    <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
   </div>
 
   <div id="my-groups-section" style="display:none">
@@ -474,11 +477,20 @@ function initials(name) {
   return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
 }
 
-window.homeTab = function(tab) {
-  document.getElementById('ht-create').classList.toggle('active', tab==='create');
-  document.getElementById('ht-join').classList.toggle('active', tab==='join');
-  document.getElementById('create-tab').style.display = tab==='create' ? '' : 'none';
-  document.getElementById('join-tab').style.display   = tab==='join'   ? '' : 'none';
+window.toggleHomeForm = function(which) {
+  const createCard = document.getElementById('create-form-card');
+  const joinCard   = document.getElementById('join-form-card');
+  const target = which === 'create' ? createCard : joinCard;
+  const other  = which === 'create' ? joinCard   : createCard;
+  const isOpen = target.style.display !== 'none';
+  other.style.display = 'none';
+  if (isOpen) {
+    target.style.display = 'none';
+  } else {
+    target.style.display = 'block';
+    target.classList.add('opening');
+    setTimeout(() => target.classList.remove('opening'), 250);
+  }
 };
 
 window.createGroup = async function() {
@@ -917,7 +929,7 @@ fetchRates(); // preload exchange rates
     // Clean the URL without reloading
     history.replaceState({}, '', location.pathname);
     // Show join tab with code pre-filled
-    homeTab('join');
+    toggleHomeForm('join');
     document.getElementById('j-code').value = inviteCode.toUpperCase();
     document.getElementById('j-user').focus();
     // Try to fetch group name to show a banner
@@ -928,8 +940,8 @@ fetchRates(); // preload exchange rates
         const banner = document.createElement('div');
         banner.className = 'invite-banner';
         banner.innerHTML = `<h2>הוזמנת לקבוצה!</h2><p>הצטרף לקבוצה <strong>"${gName}"</strong></p>`;
-        const homeCard = document.querySelector('.home-card');
-        homeCard.parentNode.insertBefore(banner, homeCard);
+        const joinCard = document.getElementById('join-form-card');
+        joinCard.parentNode.insertBefore(banner, joinCard);
       }
     } catch {}
     renderMyGroups();
