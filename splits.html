@@ -566,7 +566,8 @@ function renderMyGroups() {
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
         </div>
         <span class="sgi-arrow">▼</span>
-        <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה" style="flex-shrink:0">✕</button>
+        <button class="btn btn-secondary btn-sm" onclick="leaveGroupForReal('${g.code}','${g.uid}',${i},event)" title="צא מהקבוצה (מוחק אותך מהקבוצה)" style="flex-shrink:0;color:var(--danger)">🗑</button>
+        <button class="btn btn-secondary btn-sm" onclick="removeGroupFromList(${i},event)" title="הסר מהרשימה בלבד" style="flex-shrink:0">✕</button>
       </div>
       <div class="sgi-details" id="sgd-${i}">
         <div class="sgi-detail-content">
@@ -650,6 +651,28 @@ window.removeGroupFromList = function(idx, e) {
   if (expandedGroupIdx === idx) expandedGroupIdx = null;
   else if (expandedGroupIdx > idx) expandedGroupIdx--;
   renderMyGroups();
+};
+
+window.leaveGroupForReal = async function(code, uid, idx, e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+
+  // Remove this user from Firebase members
+  await remove(ref(db, `splits/${code}/members/${uid}`));
+
+  // If no members left → delete the entire group
+  const membersSnap = await get(ref(db, `splits/${code}/members`));
+  if (!membersSnap.exists() || Object.keys(membersSnap.val() || {}).length === 0) {
+    await remove(ref(db, `splits/${code}`));
+  }
+
+  // Remove from local list
+  const groups = getSavedGroups();
+  groups.splice(idx, 1);
+  localStorage.setItem('splits_groups', JSON.stringify(groups));
+  if (expandedGroupIdx === idx) expandedGroupIdx = null;
+  else if (expandedGroupIdx > idx) expandedGroupIdx--;
+  renderMyGroups();
+  toast('יצאת מהקבוצה');
 };
 
 window.shareGroupLink = function(code) {
