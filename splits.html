@@ -194,11 +194,137 @@
     .home-action-btn { flex: 1; padding: 14px 10px; font-size: 15px; font-weight: 700; }
     @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     .home-card.opening { animation: fadeSlideDown .22s ease; }
+
+    /* ── Dark Mode ──────────────────────────────────────────── */
+    [data-theme="dark"] {
+      --bg:         #0f172a;
+      --card:       #1e293b;
+      --text:       #f1f5f9;
+      --text-light: #94a3b8;
+      --border:     #334155;
+      --shadow:     0 1px 3px rgba(0,0,0,.4);
+      --shadow-md:  0 4px 6px -1px rgba(0,0,0,.4);
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select { background: #0f172a; color: var(--text); }
+    [data-theme="dark"] input:focus,
+    [data-theme="dark"] select:focus { background: #1e293b; }
+    .dark-toggle { background: rgba(255,255,255,.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    .dark-toggle:hover { background: rgba(255,255,255,.28); }
+
+    /* ── Group name / emoji edit ────────────────────────────── */
+    .g-name-wrap { display: flex; align-items: center; gap: 6px; }
+    .g-name-edit-btn { background: rgba(255,255,255,.18); border: none; color: #fff; padding: 2px 7px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
+    .g-name-edit-btn:hover { background: rgba(255,255,255,.32); }
+    #g-name-input { background: rgba(255,255,255,.2); border: 1.5px solid rgba(255,255,255,.5); border-radius: 7px; color: #fff; padding: 3px 9px; font-size: 17px; font-weight: 800; width: 160px; font-family: inherit; }
+    .group-emoji-btn { font-size: 26px; cursor: pointer; background: rgba(255,255,255,.12); border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: background .15s; flex-shrink: 0; }
+    .group-emoji-btn:hover { background: rgba(255,255,255,.25); }
+    .emoji-picker-popup { position: absolute; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 8px; box-shadow: var(--shadow-md); z-index: 300; display: flex; flex-wrap: wrap; gap: 4px; width: 220px; }
+    .emoji-pick-opt { font-size: 22px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 7px; transition: background .12s; }
+    .emoji-pick-opt:hover { background: var(--bg); }
+
+    /* ── Close group ────────────────────────────────────────── */
+    .closed-banner { background: linear-gradient(135deg,#64748b,#475569); color: #fff; border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+
+    /* ── Unequal split ──────────────────────────────────────── */
+    .unequal-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; user-select: none; }
+    .unequal-toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+    .unequal-toggle-row span { font-size: 13px; font-weight: 600; color: var(--text-light); }
+    .split-members-bar { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; animation: fadeSlideDown .18s ease; }
+    .split-member-check { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px 8px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); transition: all .15s; }
+    .split-member-check input { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+
+    /* ── Expense note + split tag ───────────────────────────── */
+    .exp-note { font-size: 11px; color: var(--text-light); font-style: italic; margin-top: 1px; }
+    .exp-split-tag { font-size: 10px; background: rgba(79,70,229,.1); color: var(--primary); border-radius: 5px; padding: 1px 5px; font-weight: 600; display: inline-block; margin-top: 2px; }
+
+    /* ── Search ─────────────────────────────────────────────── */
+    .search-wrap { position: relative; margin-bottom: 12px; }
+    .search-wrap input { padding-right: 34px; font-size: 14px; }
+    .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+
+    /* ── Edit modal ─────────────────────────────────────────── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: var(--card); border-radius: var(--radius); padding: 22px; width: 100%; max-width: 400px; box-shadow: var(--shadow-md); animation: fadeSlideDown .2s ease; }
+    .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+    /* ── Payment reminder ───────────────────────────────────── */
+    .tr-copy { background: rgba(79,70,229,.1); border: none; color: var(--primary); padding: 5px 9px; border-radius: 7px; cursor: pointer; font-size: 12px; font-family: inherit; font-weight: 600; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
+    .tr-copy:hover { background: rgba(79,70,229,.2); }
+
+    /* ── Per-member paid summary ────────────────────────────── */
+    .member-paid-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .member-paid-title { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
+    .member-paid-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .member-paid-row:last-child { border-bottom: none; }
+    .member-paid-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .member-paid-amt { font-size: 13px; color: var(--text-light); font-weight: 600; }
+
+    /* ── Reactions ──────────────────────────────────────────── */
+    .reactions-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .reaction-btn { background: var(--bg); border: 1.5px solid var(--border); border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 3px; font-family: inherit; }
+    .reaction-btn:hover { border-color: var(--primary-light); }
+    .reaction-btn.mine { border-color: var(--primary); background: rgba(79,70,229,.08); }
+    .reaction-count { font-size: 11px; font-weight: 700; color: var(--text-light); }
+    .reaction-btn.mine .reaction-count { color: var(--primary); }
+    .reaction-add { background: none; border: 1.5px dashed var(--border); border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all .15s; font-family: inherit; }
+    .reaction-add:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Custom split amount inputs ─────────────────────────── */
+    .split-member-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 0; }
+    .split-member-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .split-amount-input { width: 90px !important; padding: 6px 8px !important; font-size: 13px !important; text-align: left; }
+    .split-remaining-row { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; gap: 8px; }
+    .split-remaining-ok  { color: var(--success); font-weight: 700; }
+    .split-remaining-err { color: var(--danger);  font-weight: 700; }
+
+    /* ── Payment item ────────────────────────────────────────── */
+    .expense-item.payment-item { background: rgba(16,185,129,.05); border-radius: 8px; padding: 8px 10px; }
+    .payment-item .exp-amount  { color: var(--success) !important; }
   </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
+
+<!-- Edit expense modal -->
+<div id="edit-modal" class="modal-overlay" style="display:none" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ עריכת הוצאה</div>
+    <input type="hidden" id="edit-exp-id">
+    <div class="form-group">
+      <label>תיאור</label>
+      <input id="edit-desc" type="text" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label>הערה (אופציונלי)</label>
+      <input id="edit-note" type="text" maxlength="80" placeholder="הערה קצרה...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>סכום</label>
+        <input id="edit-amount" type="number" min="0.01" step="0.01">
+      </div>
+      <div class="form-group" style="max-width:100px">
+        <label>מטבע</label>
+        <select id="edit-currency">
+          <option value="ILS">₪ שקל</option>
+          <option value="USD">$ דולר</option>
+          <option value="EUR">€ יורו</option>
+          <option value="GBP">£ פאונד</option>
+          <option value="JPY">¥ ין</option>
+          <option value="JOD">JD דינר</option>
+          <option value="HUF">Ft פורינט</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEditExpense()">שמור</button>
+      <button class="btn btn-secondary" onclick="closeEditModal()">ביטול</button>
+    </div>
+  </div>
+</div>
 
 <div id="home-screen" class="screen active">
   <div class="logo">💸</div>
@@ -250,19 +376,30 @@
 </div>
 
 <div id="group-screen" class="screen">
-  <div class="group-header">
-    <div>
-      <h1 id="g-name"></h1>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
-        <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
-          📋 <span id="g-code"></span>
+  <div class="group-header" style="position:relative">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="group-emoji-btn" id="g-emoji-btn" onclick="openGroupEmojiPicker()" title="שנה אמוג'י קבוצה">💸</button>
+      <div id="group-emoji-popup" class="emoji-picker-popup" style="display:none;top:70px;right:auto;left:14px"></div>
+      <div>
+        <div class="g-name-wrap">
+          <h1 id="g-name" style="cursor:pointer" ondblclick="startEditGroupName()" title="לחץ פעמיים לעריכה"></h1>
+          <button class="g-name-edit-btn" onclick="startEditGroupName()">✏️</button>
         </div>
-        <span id="s-members" style="font-size:12px;opacity:.7;font-weight:600">👥 0</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
+            📋 <span id="g-code"></span>
+          </div>
+          <span id="s-members" style="font-size:12px;opacity:.7;font-weight:600">👥 0</span>
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
-      <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
+      <div style="display:flex;gap:6px">
+        <button class="dark-toggle" id="dark-btn" onclick="toggleDark()" title="מצב לילה">🌙</button>
+        <button class="leave-btn" onclick="leaveGroup()">יציאה ←</button>
+      </div>
       <button class="leave-btn" onclick="shareGroupLink()" title="שלח קישור הצטרפות">🔗 שתף קישור</button>
+      <button class="leave-btn" id="close-group-btn" onclick="toggleCloseGroup()" style="font-size:12px">🔒 סגרנו חשבון</button>
     </div>
   </div>
 
@@ -289,11 +426,19 @@
   </div>
 
   <div id="tab-expenses" class="tab-content active">
-    <div class="add-form">
+    <div id="closed-banner-el" class="closed-banner" style="display:none">
+      <span class="cb-icon">🔒</span>
+      <span>הקבוצה סגורה — אין אפשרות להוסיף הוצאות חדשות</span>
+    </div>
+    <div class="add-form" id="add-expense-form">
       <div class="card-title">הוסף הוצאה</div>
       <div class="form-group">
         <label>תיאור</label>
         <input id="e-desc" type="text" placeholder='למשל: "ארוחת ערב"' maxlength="60">
+      </div>
+      <div class="form-group">
+        <label>הערה <span style="font-weight:400;color:var(--text-light)">(אופציונלי)</span></label>
+        <input id="e-note" type="text" placeholder="הערה קצרה..." maxlength="80">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -317,6 +462,11 @@
           <select id="e-paidby"></select>
         </div>
       </div>
+      <label class="unequal-toggle-row">
+        <input type="checkbox" id="e-unequal" onchange="toggleSplitMembers()">
+        <span>חלוקה לא שווה (בחר מי משתתף)</span>
+      </label>
+      <div id="split-members-bar" class="split-members-bar" style="display:none"></div>
       <button class="btn btn-primary" onclick="addExpense()">+ הוסף הוצאה</button>
     </div>
 
@@ -327,6 +477,10 @@
 
     <div class="card">
       <div class="card-title">היסטוריית הוצאות</div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="exp-search" type="text" placeholder="חיפוש הוצאה..." oninput="renderExpenses()">
+      </div>
       <div id="expenses-list"><div class="spinner"></div></div>
     </div>
   </div>
@@ -599,7 +753,7 @@ async function loadGroupDetails(idx) {
     const members  = data.members  || {};
     const expenses = data.expenses || {};
     const mIds  = Object.keys(members);
-    const total = Object.values(expenses).reduce((s,e) => s+(e.amount||0), 0);
+    const total = Object.values(expenses).reduce((s,e) => s+(e.amountILS ?? e.amount ?? 0), 0);
     g.groupName = data.name || g.groupName;
     localStorage.setItem('splits_groups', JSON.stringify(groups));
     detailEl.innerHTML = `
@@ -689,6 +843,7 @@ function enterGroup(code, uid, name) {
   document.getElementById('home-screen').classList.remove('active');
   document.getElementById('group-screen').classList.add('active');
   document.querySelector('.group-header').style.background = groupGradient(code);
+  initDark();
 
   if (unsubscribe) unsubscribe();
   unsubscribe = onValue(ref(db,`splits/${code}`), snap => {
@@ -699,6 +854,170 @@ function enterGroup(code, uid, name) {
     render();
   });
 }
+
+// ── Dark mode ──────────────────────────────────────────────
+function initDark() {
+  const dark = localStorage.getItem('splits_dark') === '1';
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
+  document.getElementById('dark-btn').textContent = dark ? '☀️' : '🌙';
+}
+window.toggleDark = function() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('splits_dark', isDark ? '0' : '1');
+  document.getElementById('dark-btn').textContent = isDark ? '🌙' : '☀️';
+};
+
+// ── Group emoji picker ─────────────────────────────────────
+const GROUP_EMOJIS = ['💸','✈️','🏖️','🍕','🍻','🎉','🏠','🚗','🛒','🎸','⚽','🎯','🏕️','🎭','💊','🐾'];
+window.openGroupEmojiPicker = function() {
+  const pop = document.getElementById('group-emoji-popup');
+  if (pop.style.display !== 'none') { pop.style.display = 'none'; return; }
+  pop.innerHTML = GROUP_EMOJIS.map(e =>
+    `<div class="emoji-pick-opt" onclick="setGroupEmoji('${e}')">${e}</div>`
+  ).join('');
+  pop.style.display = 'flex';
+  setTimeout(() => document.addEventListener('click', closeEmojiPicker, {once:true}), 10);
+};
+function closeEmojiPicker(e) {
+  const pop = document.getElementById('group-emoji-popup');
+  if (pop && !pop.contains(e.target)) pop.style.display = 'none';
+}
+window.setGroupEmoji = async function(emoji) {
+  document.getElementById('group-emoji-popup').style.display = 'none';
+  document.getElementById('g-emoji-btn').textContent = emoji;
+  await update(ref(db,`splits/${groupCode}`), { emoji });
+};
+
+// ── Editable group name ────────────────────────────────────
+window.startEditGroupName = function() {
+  const h1 = document.getElementById('g-name');
+  const current = h1.textContent;
+  h1.style.display = 'none';
+  const inp = document.createElement('input');
+  inp.id = 'g-name-input'; inp.value = current; inp.maxLength = 50;
+  h1.parentNode.insertBefore(inp, h1);
+  inp.focus(); inp.select();
+  const save = async () => {
+    const val = inp.value.trim();
+    if (val && val !== current) {
+      await update(ref(db,`splits/${groupCode}`), { name: val });
+      saveGroupToList(groupCode, myId, myName, val);
+    }
+    inp.remove(); h1.style.display = '';
+  };
+  inp.addEventListener('blur', save);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = current; inp.blur(); } });
+};
+
+// ── Close / reopen group ───────────────────────────────────
+window.toggleCloseGroup = async function() {
+  const isClosed = !!groupData.closed;
+  if (!isClosed) {
+    if (!confirm('לסגור את הקבוצה? לא ניתן יהיה להוסיף הוצאות חדשות (אפשר לפתוח מחדש)')) return;
+  }
+  await update(ref(db,`splits/${groupCode}`), { closed: !isClosed });
+};
+
+// ── Custom split amounts ────────────────────────────────────
+window.toggleSplitMembers = function() {
+  const on  = document.getElementById('e-unequal').checked;
+  const bar = document.getElementById('split-members-bar');
+  bar.style.display = on ? 'flex' : 'none';
+  if (on) { renderSplitMembersBar(); autoFillEqual(); }
+};
+function renderSplitMembersBar() {
+  const bar     = document.getElementById('split-members-bar');
+  const members = groupData.members || {};
+  bar.innerHTML =
+    Object.entries(members).map(([id, m]) =>
+      `<div class="split-member-row">
+        <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'13px':'10px'};width:24px;height:24px;flex-shrink:0">${m.avatar||initials(m.name)}</div>
+        <span class="split-member-name">${m.name}</span>
+        <input type="number" class="split-amount-input" id="split-amt-${id}"
+               placeholder="0.00" step="0.01" min="0"
+               oninput="updateSplitRemaining()">
+      </div>`
+    ).join('')
+    + `<div class="split-remaining-row">
+         <span id="split-remaining" class="split-remaining-err">הכנס סכומים</span>
+         <button type="button" class="btn-ghost" style="font-size:12px;padding:4px 8px" onclick="autoFillEqual()">⚡ חלק שווה</button>
+       </div>`;
+}
+window.autoFillEqual = function() {
+  const members = groupData.members || {};
+  const mIds    = Object.keys(members);
+  if (!mIds.length) return;
+  const rawAmt  = parseFloat(document.getElementById('e-amount').value) || 0;
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  // use live rates if available, else approximate
+  const totalILS = toILS(rawAmt, currency);
+  const share    = +(totalILS / mIds.length).toFixed(2);
+  mIds.forEach((id, i) => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (!inp) return;
+    // last person gets the remainder to avoid rounding errors
+    inp.value = (i === mIds.length - 1)
+      ? (totalILS - share * (mIds.length - 1)).toFixed(2)
+      : share.toFixed(2);
+  });
+  updateSplitRemaining();
+};
+window.updateSplitRemaining = function() {
+  const members  = groupData.members || {};
+  let allocated  = 0;
+  Object.keys(members).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (inp) allocated += parseFloat(inp.value) || 0;
+  });
+  const rawAmt   = parseFloat(document.getElementById('e-amount').value) || 0;
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  const totalILS = toILS(rawAmt, currency);
+  const diff     = totalILS - allocated;
+  const el       = document.getElementById('split-remaining');
+  if (!el) return;
+  el.textContent  = Math.abs(diff) < 0.02
+    ? `✓ מוקצה ₪${allocated.toFixed(2)}`
+    : `מוקצה ₪${allocated.toFixed(2)} מתוך ₪${totalILS.toFixed(2)} (${diff > 0 ? 'חסר' : 'עודף'} ₪${Math.abs(diff).toFixed(2)})`;
+  el.className = Math.abs(diff) < 0.02 ? 'split-remaining-ok' : 'split-remaining-err';
+};
+function getSplitData() {
+  if (!document.getElementById('e-unequal').checked) return null;
+  const members = groupData.members || {};
+  const result  = {};
+  Object.keys(members).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    const val = parseFloat(inp?.value);
+    if (val > 0) result[id] = val;
+  });
+  return Object.keys(result).length ? result : null;
+}
+
+// ── Debt repayment ──────────────────────────────────────────
+window.recordPayment = async function(fromId, toId, suggestedAmt) {
+  const fromName = groupData.members[fromId]?.name || '?';
+  const toName   = groupData.members[toId]?.name   || '?';
+  const input    = prompt(`${fromName} שילם ל${toName} — כמה? (₪)`, suggestedAmt);
+  if (input === null) return;
+  const amt = parseFloat(input);
+  if (!amt || amt <= 0) { toast('סכום לא תקין'); return; }
+  const expRef = push(ref(db, `splits/${groupCode}/expenses`));
+  await set(expRef, {
+    type: 'payment',
+    description: `💸 ${fromName} → ${toName}`,
+    amount: amt, currency: 'ILS', amountILS: amt,
+    paidBy: fromId, paidTo: toId,
+    payerName: fromName, recipientName: toName,
+    timestamp: Date.now()
+  });
+  await push(ref(db, `splits/${groupCode}/log`), {
+    type: 'payment',
+    description: `💸 ${fromName} → ${toName}`,
+    amount: amt, currency: 'ILS', amountILS: amt,
+    payerName: fromName, actor: myName, timestamp: Date.now()
+  });
+  toast(`✓ נרשם: ${fromName} שילם ₪${amt.toFixed(2)} ל${toName}`);
+};
 
 window.leaveGroup = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
@@ -723,7 +1042,9 @@ window.switchTab = function(tab) {
 };
 
 window.addExpense = async function() {
+  if (groupData.closed) { toast('הקבוצה סגורה — לא ניתן להוסיף הוצאות'); return; }
   const desc     = document.getElementById('e-desc').value.trim();
+  const note     = document.getElementById('e-note').value.trim();
   const amount   = parseFloat(document.getElementById('e-amount').value);
   const currency = document.getElementById('e-currency').value || 'ILS';
   const paidBy   = document.getElementById('e-paidby').value;
@@ -733,11 +1054,24 @@ window.addExpense = async function() {
 
   await fetchRates();
   const amountILS = toILS(amount, currency);
-  const member = groupData.members[paidBy];
+  const member    = groupData.members[paidBy];
   const payerName = member?.name || 'לא ידוע';
 
+  const splitData = getSplitData();
+  if (splitData !== null) {
+    const splitTotal = Object.values(splitData).reduce((s,v) => s+v, 0);
+    if (Math.abs(splitTotal - amountILS) > 0.10) {
+      toast(`סכום החלוקה ₪${splitTotal.toFixed(2)} ≠ סה"כ ₪${amountILS.toFixed(2)}`);
+      return;
+    }
+  }
+
+  const expData = { description: desc, amount, currency, amountILS, paidBy, payerName, timestamp: Date.now() };
+  if (note) expData.note = note;
+  if (splitData !== null) expData.splitAmong = splitData;
+
   const expRef = push(ref(db,`splits/${groupCode}/expenses`));
-  await set(expRef, { description: desc, amount, currency, amountILS, paidBy, payerName, timestamp: Date.now() });
+  await set(expRef, expData);
   await push(ref(db,`splits/${groupCode}/log`), {
     type: 'add', expId: expRef.key,
     description: desc, amount, currency, amountILS, payerName,
@@ -746,7 +1080,62 @@ window.addExpense = async function() {
 
   document.getElementById('e-desc').value   = '';
   document.getElementById('e-amount').value = '';
+  document.getElementById('e-note').value   = '';
+  document.getElementById('e-unequal').checked = false;
+  document.getElementById('split-members-bar').style.display = 'none';
   toast('הוצאה נוספה ✓');
+};
+
+window.editExpense = function(expId) {
+  const e = groupData.expenses[expId];
+  if (!e) return;
+  document.getElementById('edit-exp-id').value   = expId;
+  document.getElementById('edit-desc').value     = e.description || '';
+  document.getElementById('edit-note').value     = e.note || '';
+  document.getElementById('edit-amount').value   = e.amount || '';
+  document.getElementById('edit-currency').value = e.currency || 'ILS';
+  document.getElementById('edit-modal').style.display = 'flex';
+};
+
+window.closeEditModal = function(e) {
+  if (e && e.target !== document.getElementById('edit-modal')) return;
+  document.getElementById('edit-modal').style.display = 'none';
+};
+
+window.saveEditExpense = async function() {
+  const expId    = document.getElementById('edit-exp-id').value;
+  const desc     = document.getElementById('edit-desc').value.trim();
+  const note     = document.getElementById('edit-note').value.trim();
+  const amount   = parseFloat(document.getElementById('edit-amount').value);
+  const currency = document.getElementById('edit-currency').value || 'ILS';
+  if (!desc)           { toast('אנא הכנס תיאור'); return; }
+  if (!amount || amount<=0) { toast('אנא הכנס סכום תקין'); return; }
+  await fetchRates();
+  const amountILS = toILS(amount, currency);
+  const upd = { description: desc, amount, currency, amountILS };
+  if (note) upd.note = note; else upd.note = null;
+  await update(ref(db,`splits/${groupCode}/expenses/${expId}`), upd);
+  document.getElementById('edit-modal').style.display = 'none';
+  toast('הוצאה עודכנה ✓');
+};
+
+window.copyReminder = function(fromName, toName, amount) {
+  const groupName = groupData.name || groupCode;
+  const text = `היי ${fromName}! תעביר לי ₪${amount} (קבוצה: ${groupName}) 🙏`;
+  navigator.clipboard.writeText(text)
+    .then(() => toast('טקסט הועתק! ✓'))
+    .catch(() => toast(text));
+};
+
+const REACTION_EMOJIS = ['👍','❤️','😂','😮','🔥'];
+window.toggleReaction = async function(expId, emoji) {
+  const path = `splits/${groupCode}/expenses/${expId}/reactions/${myId}`;
+  const current = groupData.expenses?.[expId]?.reactions?.[myId];
+  if (current === emoji) {
+    await remove(ref(db, path));
+  } else {
+    await set(ref(db, path), emoji);
+  }
 };
 
 window.deleteExpense = async function(expId) {
@@ -770,12 +1159,39 @@ function calcBalances() {
   const ids      = Object.keys(members);
   if (!ids.length) return {};
 
-  const total     = expenses.reduce((s,e) => s + (e.amountILS ?? e.amount ?? 0), 0);
-  const fairShare = total / ids.length;
-
   const bal = {};
-  ids.forEach(id => bal[id] = -fairShare);
-  expenses.forEach(e => { if (e.paidBy in bal) bal[e.paidBy] += e.amountILS ?? e.amount ?? 0; });
+  ids.forEach(id => bal[id] = 0);
+
+  expenses.forEach(e => {
+    const amt = e.amountILS ?? e.amount ?? 0;
+
+    // ── Direct payment (debt repayment) ──
+    if (e.type === 'payment') {
+      if (e.paidBy in bal) bal[e.paidBy] += amt;
+      if (e.paidTo in bal) bal[e.paidTo] -= amt;
+      return;
+    }
+
+    const sa = e.splitAmong;
+    if (sa && !Array.isArray(sa) && typeof sa === 'object') {
+      // ── Custom amounts per person ──
+      Object.entries(sa).forEach(([id, share]) => {
+        if (id in bal) bal[id] -= share;
+      });
+    } else if (Array.isArray(sa)) {
+      // ── Equal among selected members ──
+      const valid = sa.filter(id => id in bal);
+      if (!valid.length) return;
+      const share = amt / valid.length;
+      valid.forEach(id => { bal[id] -= share; });
+    } else {
+      // ── Equal among all ──
+      const share = amt / ids.length;
+      ids.forEach(id => { bal[id] -= share; });
+    }
+    if (e.paidBy in bal) bal[e.paidBy] += amt;
+  });
+
   ids.forEach(id => { bal[id] = Math.round(bal[id]*100)/100; });
   return bal;
 }
@@ -806,11 +1222,99 @@ const ICONS = ['🍕','🛒','⛽','🏨','🎉','🍺','☕','🎭','🍔','✈
 function icon(str) { return ICONS[str.charCodeAt(0) % ICONS.length]; }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('he-IL', { day:'numeric', month:'short' }); }
 
+function renderExpenses() {
+  const members  = groupData.members  || {};
+  const expenses = groupData.expenses || {};
+  const mIds     = Object.keys(members);
+  const expList  = Object.entries(expenses);
+  const query    = (document.getElementById('exp-search')?.value || '').trim().toLowerCase();
+
+  const esSorted = expList
+    .sort((a,b) => b[1].timestamp - a[1].timestamp)
+    .filter(([,e]) => !query || (e.description||'').toLowerCase().includes(query) || (e.payerName||'').toLowerCase().includes(query) || (e.note||'').toLowerCase().includes(query));
+
+  document.getElementById('expenses-list').innerHTML = esSorted.length
+    ? esSorted.map(([id,e]) => {
+        // ── Payment item ──
+        if (e.type === 'payment') {
+          const amt = (e.amountILS ?? e.amount ?? 0).toFixed(2);
+          return `<div class="expense-item payment-item">
+            <div class="exp-icon" style="background:linear-gradient(135deg,var(--success),#34d399)">💸</div>
+            <div class="exp-info">
+              <div class="exp-desc">${e.description}</div>
+              <div class="exp-meta">החזרת חוב &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
+            </div>
+            <div class="exp-amount" style="color:var(--success)">₪${amt}</div>
+            ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
+          </div>`;
+        }
+
+        const isILS = !e.currency || e.currency === 'ILS';
+        const amtHtml = isILS
+          ? `<div class="exp-amount">₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</div>`
+          : `<div class="exp-amount">${currSymbol(e.currency)}${(e.amount||0).toFixed(2)}<span class="exp-amount-orig">≈ ₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</span></div>`;
+
+        const sa = e.splitAmong;
+        const splitTag = sa
+          ? Array.isArray(sa)
+            ? `<span class="exp-split-tag">✂️ ${sa.length} משתתפים</span>`
+            : `<span class="exp-split-tag">✂️ חלוקה מותאמת (${Object.keys(sa).length} אנשים)</span>`
+          : '';
+
+        // Reactions
+        const reactions = e.reactions || {};
+        const grouped = {};
+        Object.entries(reactions).forEach(([uid, em]) => {
+          grouped[em] = grouped[em] || [];
+          grouped[em].push(uid);
+        });
+        const myReaction = reactions[myId];
+        const reactionBtns = Object.entries(grouped).map(([em, uids]) =>
+          `<button class="reaction-btn ${myReaction===em?'mine':''}" onclick="toggleReaction('${id}','${em}')">${em}<span class="reaction-count">${uids.length}</span></button>`
+        ).join('');
+        const addReactionBtns = REACTION_EMOJIS.filter(em => !grouped[em]).map(em =>
+          `<button class="reaction-add" onclick="toggleReaction('${id}','${em}')" title="הוסף תגובה">${em}</button>`
+        ).join('');
+
+        const isOwn = e.paidBy === myId;
+        return `
+        <div class="expense-item" style="flex-wrap:wrap">
+          <div class="exp-icon">${icon(e.description)}</div>
+          <div class="exp-info">
+            <div class="exp-desc">${e.description}</div>
+            <div class="exp-meta">שילם: ${e.payerName||'?'} &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
+            ${e.note ? `<div class="exp-note">📝 ${e.note}</div>` : ''}
+            ${splitTag}
+            <div class="reactions-row">${reactionBtns}${addReactionBtns}</div>
+          </div>
+          ${amtHtml}
+          <div style="display:flex;flex-direction:column;gap:4px">
+            ${isOwn ? `<button class="btn-ghost" onclick="editExpense('${id}')" title="ערוך">✏️</button>` : ''}
+            ${isOwn ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
+          </div>
+        </div>`;
+      }).join('')
+    : query
+      ? `<div class="empty"><div class="empty-icon">🔍</div><h3>אין תוצאות</h3><p>נסה מילה אחרת</p></div>`
+      : `<div class="empty"><div class="empty-icon">💳</div><h3>אין הוצאות עדיין</h3><p>הוסף את ההוצאה הראשונה</p></div>`;
+}
+
 function render() {
   const members  = groupData.members  || {};
   const expenses = groupData.expenses || {};
   const mIds     = Object.keys(members);
   const expList  = Object.entries(expenses);
+
+  // Closed banner
+  const isClosed = !!groupData.closed;
+  document.getElementById('closed-banner-el').style.display = isClosed ? 'flex' : 'none';
+  document.getElementById('add-expense-form').style.display = isClosed ? 'none' : '';
+  const closeBtn = document.getElementById('close-group-btn');
+  if (closeBtn) closeBtn.textContent = isClosed ? '🔓 פתח מחדש' : '🔒 סגרנו חשבון';
+
+  // Group emoji
+  const emojiBtn = document.getElementById('g-emoji-btn');
+  if (emojiBtn) emojiBtn.textContent = groupData.emoji || '💸';
 
   document.getElementById('g-name').textContent    = groupData.name || '';
   document.getElementById('g-code').textContent    = groupCode;
@@ -834,6 +1338,9 @@ function render() {
   ).join('');
   if (prev && mIds.includes(prev)) sel.value = prev;
 
+  // Refresh split members bar if open
+  if (document.getElementById('e-unequal')?.checked) renderSplitMembersBar();
+
   document.getElementById('members-list').innerHTML = mIds.length
     ? mIds.map(id => {
         const m = members[id];
@@ -845,28 +1352,16 @@ function render() {
       }).join('')
     : '<span style="font-size:13px;color:var(--text-light)">אין חברים עדיין</span>';
 
-  const esSorted = expList.sort((a,b) => b[1].timestamp - a[1].timestamp);
-  document.getElementById('expenses-list').innerHTML = esSorted.length
-    ? esSorted.map(([id,e]) => {
-        const isILS = !e.currency || e.currency === 'ILS';
-        const amtHtml = isILS
-          ? `<div class="exp-amount">₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</div>`
-          : `<div class="exp-amount">${currSymbol(e.currency)}${(e.amount||0).toFixed(2)}<span class="exp-amount-orig">≈ ₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</span></div>`;
-        return `
-        <div class="expense-item">
-          <div class="exp-icon">${icon(e.description)}</div>
-          <div class="exp-info">
-            <div class="exp-desc">${e.description}</div>
-            <div class="exp-meta">שילם: ${e.payerName||'?'} &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
-          </div>
-          ${amtHtml}
-          ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
-        </div>`;
-      }).join('')
-    : `<div class="empty"><div class="empty-icon">💳</div><h3>אין הוצאות עדיין</h3><p>הוסף את ההוצאה הראשונה</p></div>`;
+  renderExpenses();
 
   const bal = calcBalances();
-  document.getElementById('balances-list').innerHTML = mIds.length
+
+  // Per-member paid summary
+  const paidPerMember = {};
+  mIds.forEach(id => paidPerMember[id] = 0);
+  expList.forEach(([,e]) => { if (e.paidBy in paidPerMember) paidPerMember[e.paidBy] += e.amountILS ?? e.amount ?? 0; });
+
+  document.getElementById('balances-list').innerHTML = (mIds.length
     ? mIds.map(id => {
         const m = members[id];
         const b = bal[id]||0;
@@ -878,7 +1373,17 @@ function render() {
           <span class="balance-amount ${cls}">${sign}₪${Math.abs(b).toFixed(2)}</span>
         </div>`;
       }).join('')
-    : '<div class="empty"><div class="empty-icon">📊</div><h3>אין חברים עדיין</h3></div>';
+    : '<div class="empty"><div class="empty-icon">📊</div><h3>אין חברים עדיין</h3></div>')
+  + (mIds.length && expList.length ? `
+    <div class="member-paid-section">
+      <div class="member-paid-title">סה״כ שילם כל אחד</div>
+      ${mIds.sort((a,b) => paidPerMember[b]-paidPerMember[a]).map(id => `
+        <div class="member-paid-row">
+          <div class="avatar" style="background:${avatarColor(id)};font-size:${members[id].avatar?'14px':'11px'};width:24px;height:24px">${members[id].avatar||initials(members[id].name)}</div>
+          <span class="member-paid-name">${members[id].name}</span>
+          <span class="member-paid-amt">₪${paidPerMember[id].toFixed(2)}</span>
+        </div>`).join('')}
+    </div>` : '');
 
   const transfers = calcTransfers(bal);
   document.getElementById('transfers-list').innerHTML = transfers.length
@@ -892,6 +1397,10 @@ function render() {
           <div class="avatar" style="background:${avatarColor(t.to)};font-size:${members[t.to]?.avatar?'14px':'11px'}">${members[t.to]?.avatar||initials(tName)}</div>
           <span class="tr-to">${tName}</span>
           <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="tr-copy" onclick="copyReminder('${fName}','${tName}',${t.amount.toFixed(2)})" title="העתק תזכורת">📋 העתק</button>
+            <button class="tr-copy" style="background:rgba(16,185,129,.12);color:var(--success)" onclick="recordPayment('${t.from}','${t.to}',${t.amount.toFixed(2)})" title="סמן כשולם">✅ שולם</button>
+          </div>
         </div>`;
       }).join('')
     : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
