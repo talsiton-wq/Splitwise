@@ -98,6 +98,13 @@
     .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
     .me-tag { background: var(--primary); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
 
+    .avatar-picker-wrap { margin-top: 6px; }
+    .avatar-picker-wrap label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 7px; display: block; }
+    .avatar-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+    .avatar-opt { width: 40px; height: 40px; border-radius: 10px; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: all .15s; background: var(--bg); user-select: none; }
+    .avatar-opt:hover { border-color: var(--primary-light); transform: scale(1.1); }
+    .avatar-opt.selected { border-color: var(--primary); background: rgba(99,102,241,.1); box-shadow: 0 0 0 2px rgba(99,102,241,.18); transform: scale(1.08); }
+
     .add-member-row { display: flex; gap: 8px; margin-top: 12px; }
 
     .expense-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -130,6 +137,22 @@
     .empty-icon { font-size: 44px; margin-bottom: 10px; }
     .empty h3 { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
     .empty p { font-size: 13px; }
+
+    .exp-amount { font-size: 17px; font-weight: 800; color: var(--primary); white-space: nowrap; text-align: start; }
+    .exp-amount-orig { font-size: 11px; color: var(--text-light); font-weight: 600; display: block; }
+
+    .log-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .log-item:last-child { border-bottom: none; }
+    .log-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .log-icon.add-icon { background: rgba(16,185,129,.12); }
+    .log-icon.del-icon { background: rgba(239,68,68,.12); }
+    .log-info { flex: 1; min-width: 0; }
+    .log-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .log-title-del { text-decoration: line-through; opacity: .6; }
+    .log-meta-text { font-size: 12px; color: var(--text-light); }
+    .log-warn { font-size: 11px; color: var(--danger); font-weight: 700; margin-top: 3px; }
+    .log-amount { font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .log-amount-orig { font-size: 11px; color: var(--text-light); font-weight: 600; display: block; }
 
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: #fff; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: transform .3s; z-index: 999; white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); }
@@ -192,6 +215,10 @@
         <label>השם שלך</label>
         <input id="c-user" type="text" placeholder="הכנס את שמך" maxlength="30">
       </div>
+      <div class="form-group avatar-picker-wrap">
+        <label>האווטאר שלך</label>
+        <div class="avatar-picker" id="ap-create"></div>
+      </div>
       <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
     </div>
 
@@ -204,6 +231,10 @@
       <div class="form-group">
         <label>השם שלך</label>
         <input id="j-user" type="text" placeholder="הכנס את שמך" maxlength="30">
+      </div>
+      <div class="form-group avatar-picker-wrap">
+        <label>האווטאר שלך</label>
+        <div class="avatar-picker" id="ap-join"></div>
       </div>
       <button class="btn btn-primary" onclick="joinGroup()">🚀 הצטרף לקבוצה</button>
     </div>
@@ -219,8 +250,11 @@
   <div class="group-header">
     <div>
       <h1 id="g-name"></h1>
-      <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
-        📋 <span id="g-code"></span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+        <div class="code-badge" onclick="copyCode()" title="לחץ להעתקה">
+          📋 <span id="g-code"></span>
+        </div>
+        <span id="s-members" style="font-size:12px;opacity:.7;font-weight:600">👥 0</span>
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
@@ -239,8 +273,8 @@
       <div class="summary-value" id="s-share">₪0</div>
     </div>
     <div class="summary-card">
-      <div class="summary-label">מספר חברים</div>
-      <div class="summary-value" id="s-members">0</div>
+      <div class="summary-label">המאזן שלי</div>
+      <div class="summary-value" id="s-mybal">₪0</div>
     </div>
   </div>
 
@@ -248,6 +282,7 @@
     <button class="tab-btn active" onclick="switchTab('expenses')">הוצאות</button>
     <button class="tab-btn"        onclick="switchTab('balances')">יתרות</button>
     <button class="tab-btn"        onclick="switchTab('transfers')">העברות</button>
+    <button class="tab-btn"        onclick="switchTab('log')">📋 לוג</button>
   </div>
 
   <div id="tab-expenses" class="tab-content active">
@@ -259,8 +294,19 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>סכום (₪)</label>
+          <label>סכום</label>
           <input id="e-amount" type="number" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <div class="form-group" style="max-width:100px">
+          <label>מטבע</label>
+          <select id="e-currency">
+            <option value="ILS">₪ שקל</option>
+            <option value="USD">$ דולר</option>
+            <option value="EUR">€ יורו</option>
+            <option value="GBP">£ פאונד</option>
+            <option value="JPY">¥ ין</option>
+            <option value="JOD">JD דינר</option>
+          </select>
         </div>
         <div class="form-group">
           <label>שילם</label>
@@ -271,16 +317,8 @@
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <span>חברי הקבוצה</span>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAddMember()">+ הוסף חבר</button>
-      </div>
+      <div class="card-title">חברי הקבוצה</div>
       <div class="members-wrap" id="members-list"></div>
-      <div id="add-member-row" class="add-member-row" style="display:none">
-        <input id="new-member" type="text" placeholder="שם החבר" maxlength="30" style="flex:1">
-        <button class="btn btn-success btn-sm" onclick="addMember()">הוסף</button>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAddMember()">ביטול</button>
-      </div>
     </div>
 
     <div class="card">
@@ -308,6 +346,16 @@
       <div id="transfers-list"></div>
     </div>
   </div>
+
+  <div id="tab-log" class="tab-content">
+    <div class="card">
+      <div class="card-title">לוג פעולות</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:14px">
+        היסטוריה של הוספות ומחיקות הוצאות
+      </p>
+      <div id="log-list"></div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -324,11 +372,81 @@ const app = initializeApp({
 });
 const db = getDatabase(app);
 
+const AVATARS = ['😀','😎','🦊','🐻','🦁','🐼','🦋','🌟','🎯','🚀','🎸','🏄','🌈','🦄','🐯','🐙'];
+const AVATAR_COLORS = [
+  '#6366f1','#f59e0b','#10b981','#e11d48',
+  '#8b5cf6','#0891b2','#f97316','#db2777',
+  '#14b8a6','#65a30d','#9333ea','#ea580c',
+];
+const GROUP_GRADIENTS = [
+  ['#6366f1','#8b5cf6'],
+  ['#0ea5e9','#6366f1'],
+  ['#10b981','#0ea5e9'],
+  ['#f59e0b','#ef4444'],
+  ['#ec4899','#8b5cf6'],
+  ['#14b8a6','#6366f1'],
+  ['#f97316','#ec4899'],
+  ['#84cc16','#14b8a6'],
+];
+
+let selectedAvatarCreate = AVATARS[0];
+let selectedAvatarJoin   = AVATARS[0];
+
+function strHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function avatarColor(id) {
+  return AVATAR_COLORS[strHash(id) % AVATAR_COLORS.length];
+}
+function groupGradient(code) {
+  const g = GROUP_GRADIENTS[strHash(code) % GROUP_GRADIENTS.length];
+  return `linear-gradient(135deg, ${g[0]} 0%, ${g[1]} 100%)`;
+}
+function renderAvatarPicker(containerId, form) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const current = form === 'create' ? selectedAvatarCreate : selectedAvatarJoin;
+  container.innerHTML = AVATARS.map(a =>
+    `<div class="avatar-opt${a === current ? ' selected' : ''}" onclick="pickAvatar('${form}','${a}')">${a}</div>`
+  ).join('');
+}
+window.pickAvatar = function(form, emoji) {
+  if (form === 'create') selectedAvatarCreate = emoji;
+  else selectedAvatarJoin = emoji;
+  renderAvatarPicker(form === 'create' ? 'ap-create' : 'ap-join', form);
+};
+
 let groupCode   = null;
 let myId        = null;
 let myName      = null;
-let groupData   = { name:'', members:{}, expenses:{} };
+let groupData   = { name:'', members:{}, expenses:{}, log:{} };
 let unsubscribe = null;
+
+// ─── Exchange rates ───────────────────────────────────────
+let exchangeRates = null;
+let ratesFetchedAt = 0;
+async function fetchRates() {
+  if (exchangeRates && Date.now() - ratesFetchedAt < 3600000) return;
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/ILS');
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    if (data.result === 'success') { exchangeRates = data.rates; ratesFetchedAt = Date.now(); }
+    else throw new Error();
+  } catch {
+    // fallback approximate rates (1 ILS = X foreign)
+    exchangeRates = { ILS:1, USD:0.273, EUR:0.252, GBP:0.215, JPY:41.5, JOD:0.194 };
+  }
+}
+function toILS(amount, currency) {
+  if (!currency || currency === 'ILS') return amount;
+  const rate = exchangeRates?.[currency];
+  return (rate && rate !== 0) ? +(amount / rate).toFixed(4) : amount;
+}
+const CURR_SYMBOLS = { ILS:'₪', USD:'$', EUR:'€', GBP:'£', JPY:'¥', JOD:'JD' };
+function currSymbol(c) { return CURR_SYMBOLS[c] || c; }
 
 function myUserId() {
   let id = localStorage.getItem('splits_uid');
@@ -378,7 +496,7 @@ window.createGroup = async function() {
   await set(ref(db,`splits/${code}`), {
     name: gName,
     createdAt: Date.now(),
-    members: { [uid]: { name: uName, joinedAt: Date.now() } }
+    members: { [uid]: { name: uName, joinedAt: Date.now(), avatar: selectedAvatarCreate } }
   });
 
   saveGroupToList(code, uid, uName, gName);
@@ -397,7 +515,7 @@ window.joinGroup = async function() {
 
     const groupName = snap.val().name || code;
     const uid = myUserId();
-    await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now() });
+    await update(ref(db,`splits/${code}/members/${uid}`), { name: uName, joinedAt: Date.now(), avatar: selectedAvatarJoin });
 
     saveGroupToList(code, uid, uName, groupName);
     enterGroup(code, uid, uName);
@@ -429,7 +547,7 @@ function renderMyGroups() {
   list.innerHTML = groups.map((g, i) => `
     <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
       <div class="sgi-header" onclick="toggleGroupDetails(${i})">
-        <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">${initials(g.groupName||g.code)}</div>
+        <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
         <div class="saved-group-info">
           <div class="saved-group-name">${g.groupName || g.code}</div>
           <div class="saved-group-meta">השתתפת כ: ${g.myName} &nbsp;·&nbsp; קוד: ${g.code}</div>
@@ -479,7 +597,7 @@ async function loadGroupDetails(idx) {
           <div class="sgi-stat"><span class="sgi-stat-val">${Object.keys(expenses).length}</span><span class="sgi-stat-lbl">פעולות</span></div>
         </div>
         <div class="sgi-members">
-          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:10px">${initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
+          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:${members[id].avatar?'13px':'10px'};background:${avatarColor(id)}">${members[id].avatar||initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
         </div>
         <div class="sgi-actions">
           <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">פתח קבוצה ←</button>
@@ -535,12 +653,14 @@ function enterGroup(code, uid, name) {
 
   document.getElementById('home-screen').classList.remove('active');
   document.getElementById('group-screen').classList.add('active');
+  document.querySelector('.group-header').style.background = groupGradient(code);
 
   if (unsubscribe) unsubscribe();
   unsubscribe = onValue(ref(db,`splits/${code}`), snap => {
     groupData = snap.val() || {};
     if (!groupData.members)  groupData.members  = {};
     if (!groupData.expenses) groupData.expenses = {};
+    if (!groupData.log)      groupData.log      = {};
     render();
   });
 }
@@ -560,7 +680,7 @@ window.copyCode = function() {
 };
 
 window.switchTab = function(tab) {
-  const order = ['expenses','balances','transfers'];
+  const order = ['expenses','balances','transfers','log'];
   document.querySelectorAll('.tab-btn').forEach((b,i) =>
     b.classList.toggle('active', order[i]===tab));
   document.querySelectorAll('.tab-content').forEach(tc =>
@@ -568,20 +688,25 @@ window.switchTab = function(tab) {
 };
 
 window.addExpense = async function() {
-  const desc   = document.getElementById('e-desc').value.trim();
-  const amount = parseFloat(document.getElementById('e-amount').value);
-  const paidBy = document.getElementById('e-paidby').value;
+  const desc     = document.getElementById('e-desc').value.trim();
+  const amount   = parseFloat(document.getElementById('e-amount').value);
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  const paidBy   = document.getElementById('e-paidby').value;
 
-  if (!desc)           { toast('אנא הכנס תיאור');    return; }
+  if (!desc)            { toast('אנא הכנס תיאור');    return; }
   if (!amount || amount<=0) { toast('אנא הכנס סכום תקין'); return; }
 
+  await fetchRates();
+  const amountILS = toILS(amount, currency);
   const member = groupData.members[paidBy];
-  await push(ref(db,`splits/${groupCode}/expenses`), {
-    description: desc,
-    amount,
-    paidBy,
-    payerName: member?.name || 'לא ידוע',
-    timestamp: Date.now()
+  const payerName = member?.name || 'לא ידוע';
+
+  const expRef = push(ref(db,`splits/${groupCode}/expenses`));
+  await set(expRef, { description: desc, amount, currency, amountILS, paidBy, payerName, timestamp: Date.now() });
+  await push(ref(db,`splits/${groupCode}/log`), {
+    type: 'add', expId: expRef.key,
+    description: desc, amount, currency, amountILS, payerName,
+    actor: myName, timestamp: Date.now()
   });
 
   document.getElementById('e-desc').value   = '';
@@ -590,26 +715,19 @@ window.addExpense = async function() {
 };
 
 window.deleteExpense = async function(expId) {
+  const exp = groupData.expenses[expId];
+  if (exp) {
+    await push(ref(db,`splits/${groupCode}/log`), {
+      type: 'delete', expId,
+      description: exp.description, amount: exp.amount,
+      currency: exp.currency || 'ILS', amountILS: exp.amountILS ?? exp.amount,
+      payerName: exp.payerName, actor: myName, timestamp: Date.now()
+    });
+  }
   await remove(ref(db,`splits/${groupCode}/expenses/${expId}`));
   toast('הוצאה נמחקה');
 };
 
-window.toggleAddMember = function() {
-  const row = document.getElementById('add-member-row');
-  const vis = row.style.display !== 'none';
-  row.style.display = vis ? 'none' : 'flex';
-  if (!vis) document.getElementById('new-member').focus();
-};
-
-window.addMember = async function() {
-  const name = document.getElementById('new-member').value.trim();
-  if (!name) { toast('אנא הכנס שם'); return; }
-  const uid = 'manual_' + Date.now().toString(36);
-  await update(ref(db,`splits/${groupCode}/members/${uid}`), { name, joinedAt: Date.now(), manual:true });
-  document.getElementById('new-member').value = '';
-  toggleAddMember();
-  toast(`${name} נוסף לקבוצה ✓`);
-};
 
 function calcBalances() {
   const members  = groupData.members;
@@ -617,12 +735,12 @@ function calcBalances() {
   const ids      = Object.keys(members);
   if (!ids.length) return {};
 
-  const total     = expenses.reduce((s,e) => s + (e.amount||0), 0);
+  const total     = expenses.reduce((s,e) => s + (e.amountILS ?? e.amount ?? 0), 0);
   const fairShare = total / ids.length;
 
   const bal = {};
   ids.forEach(id => bal[id] = -fairShare);
-  expenses.forEach(e => { if (e.paidBy in bal) bal[e.paidBy] += e.amount||0; });
+  expenses.forEach(e => { if (e.paidBy in bal) bal[e.paidBy] += e.amountILS ?? e.amount ?? 0; });
   ids.forEach(id => { bal[id] = Math.round(bal[id]*100)/100; });
   return bal;
 }
@@ -659,13 +777,20 @@ function render() {
   const mIds     = Object.keys(members);
   const expList  = Object.entries(expenses);
 
-  document.getElementById('g-name').textContent = groupData.name || '';
-  document.getElementById('g-code').textContent = groupCode;
+  document.getElementById('g-name').textContent    = groupData.name || '';
+  document.getElementById('g-code').textContent    = groupCode;
+  document.getElementById('s-members').textContent = `👥 ${mIds.length}`;
 
-  const total = expList.reduce((s,[,e]) => s + (e.amount||0), 0);
-  document.getElementById('s-total').textContent   = '₪' + total.toFixed(2);
-  document.getElementById('s-share').textContent   = mIds.length ? '₪' + (total/mIds.length).toFixed(2) : '₪0';
-  document.getElementById('s-members').textContent = mIds.length;
+  const total = expList.reduce((s,[,e]) => s + (e.amountILS ?? e.amount ?? 0), 0);
+  document.getElementById('s-total').textContent = '₪' + total.toFixed(2);
+  document.getElementById('s-share').textContent = mIds.length ? '₪' + (total/mIds.length).toFixed(2) : '₪0';
+
+  // My balance (always visible)
+  const bal0 = calcBalances();
+  const myBal = bal0[myId] ?? 0;
+  const myBalEl = document.getElementById('s-mybal');
+  myBalEl.textContent = (myBal >= 0 ? '+' : '') + '₪' + myBal.toFixed(2);
+  myBalEl.style.color = myBal > 0.01 ? 'var(--success)' : myBal < -0.01 ? 'var(--danger)' : 'var(--text-light)';
 
   const sel = document.getElementById('e-paidby');
   const prev = sel.value;
@@ -678,7 +803,7 @@ function render() {
     ? mIds.map(id => {
         const m = members[id];
         return `<div class="member-chip">
-          <div class="avatar">${initials(m.name)}</div>
+          <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'14px':'11px'}">${m.avatar||initials(m.name)}</div>
           <span>${m.name}</span>
           ${id===myId ? '<span class="me-tag">אני</span>' : ''}
         </div>`;
@@ -687,27 +812,34 @@ function render() {
 
   const esSorted = expList.sort((a,b) => b[1].timestamp - a[1].timestamp);
   document.getElementById('expenses-list').innerHTML = esSorted.length
-    ? esSorted.map(([id,e]) => `
+    ? esSorted.map(([id,e]) => {
+        const isILS = !e.currency || e.currency === 'ILS';
+        const amtHtml = isILS
+          ? `<div class="exp-amount">₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</div>`
+          : `<div class="exp-amount">${currSymbol(e.currency)}${(e.amount||0).toFixed(2)}<span class="exp-amount-orig">≈ ₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</span></div>`;
+        return `
         <div class="expense-item">
           <div class="exp-icon">${icon(e.description)}</div>
           <div class="exp-info">
             <div class="exp-desc">${e.description}</div>
             <div class="exp-meta">שילם: ${e.payerName||'?'} &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
           </div>
-          <div class="exp-amount">₪${(e.amount||0).toFixed(2)}</div>
+          ${amtHtml}
           ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : `<div class="empty"><div class="empty-icon">💳</div><h3>אין הוצאות עדיין</h3><p>הוסף את ההוצאה הראשונה</p></div>`;
 
   const bal = calcBalances();
   document.getElementById('balances-list').innerHTML = mIds.length
     ? mIds.map(id => {
+        const m = members[id];
         const b = bal[id]||0;
         const cls = b>0.01?'pos': b<-0.01?'neg':'zero';
         const sign = b>0?'+':'';
         return `<div class="balance-item">
-          <div class="avatar">${initials(members[id].name)}</div>
-          <span class="balance-name">${members[id].name}${id===myId?' <span style="font-size:11px;color:var(--text-light)">(אני)</span>':''}</span>
+          <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'14px':'11px'}">${m.avatar||initials(m.name)}</div>
+          <span class="balance-name">${m.name}${id===myId?' <span style="font-size:11px;color:var(--text-light)">(אני)</span>':''}</span>
           <span class="balance-amount ${cls}">${sign}₪${Math.abs(b).toFixed(2)}</span>
         </div>`;
       }).join('')
@@ -719,15 +851,41 @@ function render() {
         const fName = members[t.from]?.name || '?';
         const tName = members[t.to]?.name   || '?';
         return `<div class="transfer-item">
-          <div class="avatar" style="background:var(--danger)">${initials(fName)}</div>
+          <div class="avatar" style="background:${avatarColor(t.from)};font-size:${members[t.from]?.avatar?'14px':'11px'}">${members[t.from]?.avatar||initials(fName)}</div>
           <span class="tr-from">${fName}</span>
           <span class="tr-arrow">←</span>
-          <div class="avatar" style="background:var(--success)">${initials(tName)}</div>
+          <div class="avatar" style="background:${avatarColor(t.to)};font-size:${members[t.to]?.avatar?'14px':'11px'}">${members[t.to]?.avatar||initials(tName)}</div>
           <span class="tr-to">${tName}</span>
           <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
         </div>`;
       }).join('')
     : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
+
+  // ─── Log tab ────────────────────────────────────────────
+  const logEntries = Object.values(groupData.log || {}).sort((a,b) => b.timestamp - a.timestamp);
+  const deletedExpIds = new Set(logEntries.filter(e => e.type === 'delete').map(e => e.expId).filter(Boolean));
+  document.getElementById('log-list').innerHTML = logEntries.length
+    ? logEntries.map(entry => {
+        const isDel = entry.type === 'delete';
+        const wasDeleted = !isDel && deletedExpIds.has(entry.expId);
+        const isILS = !entry.currency || entry.currency === 'ILS';
+        const amtILS = (entry.amountILS ?? entry.amount ?? 0).toFixed(2);
+        const amtOrig = (entry.amount || 0).toFixed(2);
+        const amtHtml = isILS
+          ? `₪${amtILS}`
+          : `${currSymbol(entry.currency)}${amtOrig}<span class="log-amount-orig">≈ ₪${amtILS}</span>`;
+        return `<div class="log-item">
+          <div class="log-icon ${isDel?'del-icon':'add-icon'}">${isDel?'🗑':'➕'}</div>
+          <div class="log-info">
+            <div class="log-title${wasDeleted?' log-title-del':''}">${entry.description||''}</div>
+            <div class="log-meta-text">${entry.actor||''} · ${fmtDate(entry.timestamp)} · שילם: ${entry.payerName||'?'}</div>
+            ${wasDeleted ? '<div class="log-warn">⚠️ הוצאה זו נמחקה לאחר מכן</div>' : ''}
+            ${isDel ? '<div class="log-warn">הוצאה נמחקה</div>' : ''}
+          </div>
+          <div class="log-amount ${isDel?'neg':''}">${isDel?'−':''}${amtHtml}</div>
+        </div>`;
+      }).join('')
+    : `<div class="empty"><div class="empty-icon">📋</div><h3>אין פעולות עדיין</h3><p>כאן תופיע היסטוריית ההוצאות</p></div>`;
 }
 
 // Migrate old single-session format
@@ -746,6 +904,10 @@ function render() {
   } catch {}
   localStorage.removeItem('splits_session');
 })();
+
+renderAvatarPicker('ap-create', 'create');
+renderAvatarPicker('ap-join', 'join');
+fetchRates(); // preload exchange rates
 
 // Handle invite link: splits.html?code=ABCDEF
 (async () => {
