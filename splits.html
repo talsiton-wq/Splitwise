@@ -270,6 +270,18 @@
     .reaction-btn.mine .reaction-count { color: var(--primary); }
     .reaction-add { background: none; border: 1.5px dashed var(--border); border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all .15s; font-family: inherit; }
     .reaction-add:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Custom split amount inputs ─────────────────────────── */
+    .split-member-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 0; }
+    .split-member-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .split-amount-input { width: 90px !important; padding: 6px 8px !important; font-size: 13px !important; text-align: left; }
+    .split-remaining-row { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; gap: 8px; }
+    .split-remaining-ok  { color: var(--success); font-weight: 700; }
+    .split-remaining-err { color: var(--danger);  font-weight: 700; }
+
+    /* ── Payment item ────────────────────────────────────────── */
+    .expense-item.payment-item { background: rgba(16,185,129,.05); border-radius: 8px; padding: 8px 10px; }
+    .payment-item .exp-amount  { color: var(--success) !important; }
   </style>
 </head>
 <body>
@@ -741,7 +753,7 @@ async function loadGroupDetails(idx) {
     const members  = data.members  || {};
     const expenses = data.expenses || {};
     const mIds  = Object.keys(members);
-    const total = Object.values(expenses).reduce((s,e) => s+(e.amount||0), 0);
+    const total = Object.values(expenses).reduce((s,e) => s+(e.amountILS ?? e.amount ?? 0), 0);
     g.groupName = data.name || g.groupName;
     localStorage.setItem('splits_groups', JSON.stringify(groups));
     detailEl.innerHTML = `
@@ -907,30 +919,105 @@ window.toggleCloseGroup = async function() {
   await update(ref(db,`splits/${groupCode}`), { closed: !isClosed });
 };
 
-// ── Unequal split ──────────────────────────────────────────
+// ── Custom split amounts ────────────────────────────────────
 window.toggleSplitMembers = function() {
-  const on = document.getElementById('e-unequal').checked;
+  const on  = document.getElementById('e-unequal').checked;
   const bar = document.getElementById('split-members-bar');
   bar.style.display = on ? 'flex' : 'none';
-  if (on) renderSplitMembersBar();
+  if (on) { renderSplitMembersBar(); autoFillEqual(); }
 };
 function renderSplitMembersBar() {
-  const bar = document.getElementById('split-members-bar');
+  const bar     = document.getElementById('split-members-bar');
   const members = groupData.members || {};
-  bar.innerHTML = Object.entries(members).map(([id, m]) =>
-    `<label class="split-member-check">
-      <input type="checkbox" id="sc-${id}" checked>
-      ${m.avatar||''} ${m.name}
-    </label>`
-  ).join('');
+  bar.innerHTML =
+    Object.entries(members).map(([id, m]) =>
+      `<div class="split-member-row">
+        <div class="avatar" style="background:${avatarColor(id)};font-size:${m.avatar?'13px':'10px'};width:24px;height:24px;flex-shrink:0">${m.avatar||initials(m.name)}</div>
+        <span class="split-member-name">${m.name}</span>
+        <input type="number" class="split-amount-input" id="split-amt-${id}"
+               placeholder="0.00" step="0.01" min="0"
+               oninput="updateSplitRemaining()">
+      </div>`
+    ).join('')
+    + `<div class="split-remaining-row">
+         <span id="split-remaining" class="split-remaining-err">הכנס סכומים</span>
+         <button type="button" class="btn-ghost" style="font-size:12px;padding:4px 8px" onclick="autoFillEqual()">⚡ חלק שווה</button>
+       </div>`;
 }
-function getSelectedSplitIds() {
-  if (!document.getElementById('e-unequal').checked) return null;
-  return Object.keys(groupData.members || {}).filter(id => {
-    const cb = document.getElementById(`sc-${id}`);
-    return cb && cb.checked;
+window.autoFillEqual = function() {
+  const members = groupData.members || {};
+  const mIds    = Object.keys(members);
+  if (!mIds.length) return;
+  const rawAmt  = parseFloat(document.getElementById('e-amount').value) || 0;
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  // use live rates if available, else approximate
+  const totalILS = toILS(rawAmt, currency);
+  const share    = +(totalILS / mIds.length).toFixed(2);
+  mIds.forEach((id, i) => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (!inp) return;
+    // last person gets the remainder to avoid rounding errors
+    inp.value = (i === mIds.length - 1)
+      ? (totalILS - share * (mIds.length - 1)).toFixed(2)
+      : share.toFixed(2);
   });
+  updateSplitRemaining();
+};
+window.updateSplitRemaining = function() {
+  const members  = groupData.members || {};
+  let allocated  = 0;
+  Object.keys(members).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    if (inp) allocated += parseFloat(inp.value) || 0;
+  });
+  const rawAmt   = parseFloat(document.getElementById('e-amount').value) || 0;
+  const currency = document.getElementById('e-currency').value || 'ILS';
+  const totalILS = toILS(rawAmt, currency);
+  const diff     = totalILS - allocated;
+  const el       = document.getElementById('split-remaining');
+  if (!el) return;
+  el.textContent  = Math.abs(diff) < 0.02
+    ? `✓ מוקצה ₪${allocated.toFixed(2)}`
+    : `מוקצה ₪${allocated.toFixed(2)} מתוך ₪${totalILS.toFixed(2)} (${diff > 0 ? 'חסר' : 'עודף'} ₪${Math.abs(diff).toFixed(2)})`;
+  el.className = Math.abs(diff) < 0.02 ? 'split-remaining-ok' : 'split-remaining-err';
+};
+function getSplitData() {
+  if (!document.getElementById('e-unequal').checked) return null;
+  const members = groupData.members || {};
+  const result  = {};
+  Object.keys(members).forEach(id => {
+    const inp = document.getElementById(`split-amt-${id}`);
+    const val = parseFloat(inp?.value);
+    if (val > 0) result[id] = val;
+  });
+  return Object.keys(result).length ? result : null;
 }
+
+// ── Debt repayment ──────────────────────────────────────────
+window.recordPayment = async function(fromId, toId, suggestedAmt) {
+  const fromName = groupData.members[fromId]?.name || '?';
+  const toName   = groupData.members[toId]?.name   || '?';
+  const input    = prompt(`${fromName} שילם ל${toName} — כמה? (₪)`, suggestedAmt);
+  if (input === null) return;
+  const amt = parseFloat(input);
+  if (!amt || amt <= 0) { toast('סכום לא תקין'); return; }
+  const expRef = push(ref(db, `splits/${groupCode}/expenses`));
+  await set(expRef, {
+    type: 'payment',
+    description: `💸 ${fromName} → ${toName}`,
+    amount: amt, currency: 'ILS', amountILS: amt,
+    paidBy: fromId, paidTo: toId,
+    payerName: fromName, recipientName: toName,
+    timestamp: Date.now()
+  });
+  await push(ref(db, `splits/${groupCode}/log`), {
+    type: 'payment',
+    description: `💸 ${fromName} → ${toName}`,
+    amount: amt, currency: 'ILS', amountILS: amt,
+    payerName: fromName, actor: myName, timestamp: Date.now()
+  });
+  toast(`✓ נרשם: ${fromName} שילם ₪${amt.toFixed(2)} ל${toName}`);
+};
 
 window.leaveGroup = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
@@ -965,17 +1052,23 @@ window.addExpense = async function() {
   if (!desc)            { toast('אנא הכנס תיאור');    return; }
   if (!amount || amount<=0) { toast('אנא הכנס סכום תקין'); return; }
 
-  const splitAmong = getSelectedSplitIds();
-  if (splitAmong !== null && splitAmong.length === 0) { toast('יש לבחור לפחות משתתף אחד'); return; }
-
   await fetchRates();
   const amountILS = toILS(amount, currency);
-  const member = groupData.members[paidBy];
+  const member    = groupData.members[paidBy];
   const payerName = member?.name || 'לא ידוע';
+
+  const splitData = getSplitData();
+  if (splitData !== null) {
+    const splitTotal = Object.values(splitData).reduce((s,v) => s+v, 0);
+    if (Math.abs(splitTotal - amountILS) > 0.10) {
+      toast(`סכום החלוקה ₪${splitTotal.toFixed(2)} ≠ סה"כ ₪${amountILS.toFixed(2)}`);
+      return;
+    }
+  }
 
   const expData = { description: desc, amount, currency, amountILS, paidBy, payerName, timestamp: Date.now() };
   if (note) expData.note = note;
-  if (splitAmong !== null) expData.splitAmong = splitAmong;
+  if (splitData !== null) expData.splitAmong = splitData;
 
   const expRef = push(ref(db,`splits/${groupCode}/expenses`));
   await set(expRef, expData);
@@ -1071,10 +1164,31 @@ function calcBalances() {
 
   expenses.forEach(e => {
     const amt = e.amountILS ?? e.amount ?? 0;
-    const splitAmong = (e.splitAmong || ids).filter(id => id in bal);
-    if (!splitAmong.length) return;
-    const share = amt / splitAmong.length;
-    splitAmong.forEach(id => { bal[id] -= share; });
+
+    // ── Direct payment (debt repayment) ──
+    if (e.type === 'payment') {
+      if (e.paidBy in bal) bal[e.paidBy] += amt;
+      if (e.paidTo in bal) bal[e.paidTo] -= amt;
+      return;
+    }
+
+    const sa = e.splitAmong;
+    if (sa && !Array.isArray(sa) && typeof sa === 'object') {
+      // ── Custom amounts per person ──
+      Object.entries(sa).forEach(([id, share]) => {
+        if (id in bal) bal[id] -= share;
+      });
+    } else if (Array.isArray(sa)) {
+      // ── Equal among selected members ──
+      const valid = sa.filter(id => id in bal);
+      if (!valid.length) return;
+      const share = amt / valid.length;
+      valid.forEach(id => { bal[id] -= share; });
+    } else {
+      // ── Equal among all ──
+      const share = amt / ids.length;
+      ids.forEach(id => { bal[id] -= share; });
+    }
     if (e.paidBy in bal) bal[e.paidBy] += amt;
   });
 
@@ -1121,14 +1235,30 @@ function renderExpenses() {
 
   document.getElementById('expenses-list').innerHTML = esSorted.length
     ? esSorted.map(([id,e]) => {
+        // ── Payment item ──
+        if (e.type === 'payment') {
+          const amt = (e.amountILS ?? e.amount ?? 0).toFixed(2);
+          return `<div class="expense-item payment-item">
+            <div class="exp-icon" style="background:linear-gradient(135deg,var(--success),#34d399)">💸</div>
+            <div class="exp-info">
+              <div class="exp-desc">${e.description}</div>
+              <div class="exp-meta">החזרת חוב &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
+            </div>
+            <div class="exp-amount" style="color:var(--success)">₪${amt}</div>
+            ${e.paidBy===myId ? `<button class="btn-ghost" onclick="deleteExpense('${id}')" title="מחק">🗑</button>` : ''}
+          </div>`;
+        }
+
         const isILS = !e.currency || e.currency === 'ILS';
         const amtHtml = isILS
           ? `<div class="exp-amount">₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</div>`
           : `<div class="exp-amount">${currSymbol(e.currency)}${(e.amount||0).toFixed(2)}<span class="exp-amount-orig">≈ ₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</span></div>`;
 
-        const splitAmong = e.splitAmong;
-        const splitTag = splitAmong
-          ? `<span class="exp-split-tag">✂️ ${splitAmong.length} משתתפים</span>`
+        const sa = e.splitAmong;
+        const splitTag = sa
+          ? Array.isArray(sa)
+            ? `<span class="exp-split-tag">✂️ ${sa.length} משתתפים</span>`
+            : `<span class="exp-split-tag">✂️ חלוקה מותאמת (${Object.keys(sa).length} אנשים)</span>`
           : '';
 
         // Reactions
@@ -1267,7 +1397,10 @@ function render() {
           <div class="avatar" style="background:${avatarColor(t.to)};font-size:${members[t.to]?.avatar?'14px':'11px'}">${members[t.to]?.avatar||initials(tName)}</div>
           <span class="tr-to">${tName}</span>
           <span class="tr-amount">₪${t.amount.toFixed(2)}</span>
-          <button class="tr-copy" onclick="copyReminder('${fName}','${tName}',${t.amount.toFixed(2)})" title="העתק תזכורת">📋 העתק</button>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="tr-copy" onclick="copyReminder('${fName}','${tName}',${t.amount.toFixed(2)})" title="העתק תזכורת">📋 העתק</button>
+            <button class="tr-copy" style="background:rgba(16,185,129,.12);color:var(--success)" onclick="recordPayment('${t.from}','${t.to}',${t.amount.toFixed(2)})" title="סמן כשולם">✅ שולם</button>
+          </div>
         </div>`;
       }).join('')
     : `<div class="empty"><div class="empty-icon">🎉</div><h3>${expList.length ? 'הכל מאוזן!' : 'אין הוצאות עדיין'}</h3><p>${expList.length ? 'אין צורך בהעברות כרגע' : 'הוסף הוצאות כדי לראות מי חייב למי'}</p></div>`;
