@@ -306,6 +306,13 @@
     /* ── Payment item ────────────────────────────────────────── */
     .expense-item.payment-item { background: rgba(16,185,129,.05); border-radius: 8px; padding: 8px 10px; }
     .payment-item .exp-amount  { color: var(--success) !important; }
+
+    /* ── Expense icon picker ─────────────────────────────────── */
+    .exp-icon-picker { display: flex; flex-wrap: wrap; gap: 5px; }
+    .exp-icon-opt { width: 44px; height: 44px; border-radius: 10px; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: all .15s; background: var(--bg); user-select: none; }
+    .exp-icon-opt:hover { border-color: var(--primary-light); transform: scale(1.1); }
+    .exp-icon-opt.selected { border-color: var(--primary); background: rgba(99,102,241,.12); box-shadow: 0 0 0 2px rgba(99,102,241,.18); transform: scale(1.08); }
+    [data-theme="dark"] .exp-icon-opt { background: #1e293b; }
   </style>
 </head>
 <body>
@@ -317,9 +324,14 @@
   <div class="modal">
     <div class="modal-title">✏️ עריכת הוצאה</div>
     <input type="hidden" id="edit-exp-id">
+    <input type="hidden" id="edit-exp-icon">
     <div class="form-group">
       <label>תיאור</label>
       <input id="edit-desc" type="text" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label>אייקון</label>
+      <div id="edit-icon-picker" class="exp-icon-picker"></div>
     </div>
     <div class="form-group">
       <label>הערה (אופציונלי)</label>
@@ -458,6 +470,10 @@
       <div class="form-group">
         <label>תיאור</label>
         <input id="e-desc" type="text" placeholder='למשל: "ארוחת ערב"' maxlength="60">
+      </div>
+      <div class="form-group">
+        <label>אייקון</label>
+        <div id="add-icon-picker" class="exp-icon-picker"></div>
       </div>
       <div class="form-group">
         <label>הערה <span style="font-weight:400;color:var(--text-light)">(אופציונלי)</span></label>
@@ -1178,7 +1194,7 @@ window.addExpense = async function() {
     }
   }
 
-  const expData = { description: desc, amount, currency, amountILS, paidBy, payerName, timestamp: Date.now() };
+  const expData = { description: desc, amount, currency, amountILS, paidBy, payerName, icon: addExpIcon, timestamp: Date.now() };
   if (note) expData.note = note;
   if (splitData !== null) expData.splitAmong = splitData;
 
@@ -1196,6 +1212,8 @@ window.addExpense = async function() {
   document.getElementById('e-unequal').checked = false;
   document.getElementById('split-members-bar').style.display = 'none';
   splitMode = 'equal';
+  addExpIcon = DEFAULT_EXP_ICON;
+  renderAddIconPicker();
   toast('הוצאה נוספה ✓');
 };
 
@@ -1207,6 +1225,9 @@ window.editExpense = function(expId) {
   document.getElementById('edit-note').value     = e.note || '';
   document.getElementById('edit-amount').value   = e.amount || '';
   document.getElementById('edit-currency').value = e.currency || 'ILS';
+  const iconVal = e.icon || DEFAULT_EXP_ICON;
+  document.getElementById('edit-exp-icon').value = iconVal;
+  renderEditIconPicker(iconVal);
   document.getElementById('edit-modal').style.display = 'flex';
 };
 
@@ -1226,6 +1247,7 @@ window.saveEditExpense = async function() {
   await fetchRates();
   const amountILS = toILS(amount, currency);
   const upd = { description: desc, amount, currency, amountILS };
+  upd.icon = document.getElementById('edit-exp-icon').value || DEFAULT_EXP_ICON;
   if (note) upd.note = note; else upd.note = null;
   await update(ref(db,`splits/${groupCode}/expenses/${expId}`), upd);
   document.getElementById('edit-modal').style.display = 'none';
@@ -1340,8 +1362,37 @@ function calcTransfers(bal) {
   return out;
 }
 
-const ICONS = ['🍕','🛒','⛽','🏨','🎉','🍺','☕','🎭','🍔','✈️','🏖️','🎸'];
-function icon(str) { return ICONS[str.charCodeAt(0) % ICONS.length]; }
+const EXPENSE_ICONS = [
+  { e:'🧾', l:'כללי' },  { e:'🍽️', l:'אוכל' },  { e:'☕', l:'קפה' },
+  { e:'🍺', l:'בר' },    { e:'🛒', l:'קניות' },  { e:'✈️', l:'טיסה' },
+  { e:'🚗', l:'נסיעה' }, { e:'⛽', l:'דלק' },    { e:'🏨', l:'לינה' },
+  { e:'🎭', l:'אטרקציה'},{ e:'🏖️', l:'חוף' },   { e:'🎉', l:'בידור' },
+  { e:'💊', l:'רפואה' }, { e:'🏃', l:'ספורט' },  { e:'🛁', l:'ספא' },
+  { e:'🎸', l:'מוסיקה' },
+];
+const DEFAULT_EXP_ICON = '🧾';
+let addExpIcon = DEFAULT_EXP_ICON;
+
+function renderAddIconPicker() {
+  const el = document.getElementById('add-icon-picker');
+  if (!el) return;
+  el.innerHTML = EXPENSE_ICONS.map(({e, l}) =>
+    `<div class="exp-icon-opt${e === addExpIcon ? ' selected' : ''}" title="${l}" onclick="pickAddIcon('${e}')">${e}</div>`
+  ).join('');
+}
+function renderEditIconPicker(selected) {
+  const el = document.getElementById('edit-icon-picker');
+  if (!el) return;
+  el.innerHTML = EXPENSE_ICONS.map(({e, l}) =>
+    `<div class="exp-icon-opt${e === selected ? ' selected' : ''}" title="${l}" onclick="pickEditIcon('${e}')">${e}</div>`
+  ).join('');
+}
+window.pickAddIcon = function(emoji) { addExpIcon = emoji; renderAddIconPicker(); };
+window.pickEditIcon = function(emoji) {
+  document.getElementById('edit-exp-icon').value = emoji;
+  renderEditIconPicker(emoji);
+};
+
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('he-IL', { day:'numeric', month:'short' }); }
 
 function renderExpenses() {
@@ -1388,7 +1439,7 @@ function renderExpenses() {
         const isOwn = e.paidBy === myId;
         return `
         <div class="expense-item" style="flex-wrap:wrap">
-          <div class="exp-icon">${icon(e.description)}</div>
+          <div class="exp-icon">${e.icon || DEFAULT_EXP_ICON}</div>
           <div class="exp-info">
             <div class="exp-desc">${e.description}</div>
             <div class="exp-meta">שילם: ${e.payerName||'?'} &nbsp;·&nbsp; ${fmtDate(e.timestamp)}</div>
@@ -1451,6 +1502,9 @@ function render() {
 
   // Refresh split members bar if open
   if (document.getElementById('e-unequal')?.checked) renderSplitMembersBar();
+
+  // Refresh add-expense icon picker
+  renderAddIconPicker();
 
   document.getElementById('members-list').innerHTML = mIds.length
     ? mIds.map(id => {
