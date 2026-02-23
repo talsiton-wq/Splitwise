@@ -69,6 +69,10 @@
     .btn-ghost:hover { background: var(--bg); color: var(--danger); }
 
     #group-screen { max-width: 620px; margin: 0 auto; padding: 14px; }
+    @keyframes slideInFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes slideOutToTop     { from { transform: translateY(0); opacity:1; } to { transform: translateY(-25%); opacity:0; } }
+    @keyframes slideInFromTop    { from { transform: translateY(-25%); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    @keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
 
     .group-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
     .group-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
@@ -940,10 +944,18 @@ window.shareGroupLink = function(code) {
 function enterGroup(code, uid, name) {
   groupCode = code; myId = uid; myName = name;
 
-  document.getElementById('home-screen').classList.remove('active');
-  document.getElementById('group-screen').classList.add('active');
-  window.scrollTo(0, 130);
-  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  const _homeIn = document.getElementById('home-screen');
+  const _groupIn = document.getElementById('group-screen');
+  const _dur = '.38s cubic-bezier(.32,.72,0,1)';
+  const _fixed = 'position:fixed;inset:0;width:100%;max-width:none;overflow-y:auto;background:var(--bg);';
+  _homeIn.style.cssText  = _fixed + `z-index:1;animation:slideOutToTop ${_dur} forwards;`;
+  _groupIn.classList.add('active');
+  _groupIn.style.cssText = _fixed + `z-index:2;animation:slideInFromBottom ${_dur} forwards;`;
+  _homeIn.addEventListener('animationend', () => {
+    _homeIn.classList.remove('active');
+    _homeIn.style.cssText  = '';
+    _groupIn.style.cssText = '';
+  }, { once: true });
   document.querySelector('.group-header').style.background = groupGradient(code);
   initDark();
 
@@ -1282,11 +1294,21 @@ window.recordPayment = async function(fromId, toId, suggestedAmt) {
 window.leaveGroup = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   groupCode = myId = myName = null;
-  document.getElementById('group-screen').classList.remove('active');
-  document.getElementById('home-screen').classList.add('active');
-  expandedGroupIdx = lastEnteredGroupIdx;
-  lastEnteredGroupIdx = null;
-  renderMyGroups();
+  const _homeOut = document.getElementById('home-screen');
+  const _groupOut = document.getElementById('group-screen');
+  const _durOut = '.38s cubic-bezier(.32,.72,0,1)';
+  const _fixedOut = 'position:fixed;inset:0;width:100%;max-width:none;overflow-y:auto;background:var(--bg);';
+  _homeOut.classList.add('active');
+  _homeOut.style.cssText  = _fixedOut + `z-index:1;animation:slideInFromTop ${_durOut} forwards;`;
+  _groupOut.style.cssText = _fixedOut + `z-index:2;animation:slideOutToBottom ${_durOut} forwards;`;
+  _groupOut.addEventListener('animationend', () => {
+    _groupOut.classList.remove('active');
+    _groupOut.style.cssText = '';
+    _homeOut.style.cssText  = '';
+    expandedGroupIdx = lastEnteredGroupIdx;
+    lastEnteredGroupIdx = null;
+    renderMyGroups();
+  }, { once: true });
 };
 
 // Back gesture (phone/browser back button) closes group screen
