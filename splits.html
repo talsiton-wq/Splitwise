@@ -951,11 +951,14 @@ function enterGroup(code, uid, name) {
   _homeIn.style.cssText  = _fixed + `z-index:1;animation:slideOutToTop ${_dur} forwards;`;
   _groupIn.classList.add('active');
   _groupIn.style.cssText = _fixed + `z-index:2;animation:slideInFromBottom ${_dur} forwards;`;
-  _homeIn.addEventListener('animationend', () => {
+  const _onHomeAnim = (e) => {
+    if (e.animationName !== 'slideOutToTop') return;
+    _homeIn.removeEventListener('animationend', _onHomeAnim);
     _homeIn.classList.remove('active');
-    _homeIn.style.cssText  = '';
+    _homeIn.style.cssText  = 'display:none;';
     _groupIn.style.cssText = '';
-  }, { once: true });
+  };
+  _homeIn.addEventListener('animationend', _onHomeAnim);
   document.querySelector('.group-header').style.background = groupGradient(code);
   initDark();
 
@@ -1301,14 +1304,17 @@ window.leaveGroup = function() {
   _homeOut.classList.add('active');
   _homeOut.style.cssText  = _fixedOut + `z-index:1;animation:slideInFromTop ${_durOut} forwards;`;
   _groupOut.style.cssText = _fixedOut + `z-index:2;animation:slideOutToBottom ${_durOut} forwards;`;
-  _groupOut.addEventListener('animationend', () => {
+  const _onGroupAnim = (e) => {
+    if (e.animationName !== 'slideOutToBottom') return;
+    _groupOut.removeEventListener('animationend', _onGroupAnim);
     _groupOut.classList.remove('active');
     _groupOut.style.cssText = '';
     _homeOut.style.cssText  = '';
     expandedGroupIdx = lastEnteredGroupIdx;
     lastEnteredGroupIdx = null;
     renderMyGroups();
-  }, { once: true });
+  };
+  _groupOut.addEventListener('animationend', _onGroupAnim);
 };
 
 // Back gesture (phone/browser back button) closes group screen
