@@ -68,20 +68,7 @@
     .btn-ghost { background: none; border: none; cursor: pointer; color: var(--text-light); padding: 6px; border-radius: 7px; font-family: inherit; transition: background .15s; }
     .btn-ghost:hover { background: var(--bg); color: var(--danger); }
 
-    #group-screen {
-      position: fixed; left: 0; right: 0; bottom: 0;
-      z-index: 500;
-      overflow-y: auto;
-      background: var(--bg);
-      border-radius: 18px 18px 0 0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,.18);
-      transform: translateY(100%);
-      transition: transform .3s cubic-bezier(.4,0,.2,1);
-      display: block !important;
-      padding: 14px;
-    }
-    #group-screen.active { transform: translateY(0); }
-    #group-screen .group-inner { max-width: 620px; margin: 0 auto; }
+    #group-screen { max-width: 620px; margin: 0 auto; padding: 14px; }
 
     .group-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
     .group-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
@@ -488,8 +475,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
-      <div style="display:flex;gap:6px">
-      </div>
+      <button onclick="leaveGroup()" title="חזרה לבית" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:20px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
       <button class="leave-btn" onclick="shareGroupLink()" title="שלח קישור הצטרפות">🔗 שתף קישור</button>
       <button class="leave-btn" id="close-group-btn" onclick="toggleCloseGroup()" style="font-size:12px">🔒 סגרנו חשבון</button>
     </div>
@@ -890,11 +876,6 @@ async function loadGroupDetails(idx) {
 }
 
 window.enterSavedGroup = async function(idx) {
-  // Toggle: if already open for this group, close it
-  if (document.getElementById('group-screen').classList.contains('active') && lastEnteredGroupIdx === idx) {
-    leaveGroup();
-    return;
-  }
   const groups = getSavedGroups();
   const g = groups[idx];
   if (!g) return;
@@ -911,16 +892,7 @@ window.enterSavedGroup = async function(idx) {
   g.lastAccessed = Date.now();
   localStorage.setItem('splits_groups', JSON.stringify(groups));
   lastEnteredGroupIdx = idx;
-  // keep expandedGroupIdx — card stays open above the overlay
-  // position overlay below the card
-  const card = document.getElementById(`sgi-${idx}`);
-  if (card) {
-    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    const gs = document.getElementById('group-screen');
-    setTimeout(() => {
-      gs.style.top = card.getBoundingClientRect().bottom + 'px';
-    }, 320);
-  }
+  expandedGroupIdx = null;
   enterGroup(g.code, g.uid, g.myName);
 };
 
@@ -968,7 +940,7 @@ window.shareGroupLink = function(code) {
 function enterGroup(code, uid, name) {
   groupCode = code; myId = uid; myName = name;
 
-  // home-screen stays visible behind the overlay
+  document.getElementById('home-screen').classList.remove('active');
   document.getElementById('group-screen').classList.add('active');
   document.querySelector('.group-header').style.background = groupGradient(code);
   initDark();
@@ -1309,8 +1281,8 @@ window.leaveGroup = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   groupCode = myId = myName = null;
   document.getElementById('group-screen').classList.remove('active');
-  // home-screen was never hidden, no need to re-add active
-  expandedGroupIdx = lastEnteredGroupIdx; // keep card open
+  document.getElementById('home-screen').classList.add('active');
+  expandedGroupIdx = lastEnteredGroupIdx;
   lastEnteredGroupIdx = null;
   renderMyGroups();
 };
