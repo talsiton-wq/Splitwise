@@ -313,6 +313,33 @@
     .exp-icon-opt:hover { border-color: var(--primary-light); transform: scale(1.1); }
     .exp-icon-opt.selected { border-color: var(--primary); background: rgba(99,102,241,.12); box-shadow: 0 0 0 2px rgba(99,102,241,.18); transform: scale(1.08); }
     [data-theme="dark"] .exp-icon-opt { background: #1e293b; }
+
+    /* ── Trip days ────────────────────────────────────────── */
+    .trip-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; cursor: pointer; padding: 10px 12px; background: rgba(79,70,229,.06); border: 1.5px solid rgba(79,70,229,.2); border-radius: 8px; user-select: none; }
+    .trip-toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+    .trip-toggle-row span { font-size: 14px; font-weight: 600; color: var(--primary); }
+    [data-theme="dark"] .trip-toggle-row { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.3); }
+
+    .trip-days-card .card-title { margin-bottom: 10px; }
+    .trip-day-summary-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .trip-day-summary-row:last-child { border-bottom: none; }
+    .trip-day-name-lbl { font-weight: 700; font-size: 14px; min-width: 58px; }
+    .trip-day-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+    .trip-day-count { font-size: 12px; color: var(--text-light); flex-shrink: 0; }
+
+    .trip-day-item { border: 1.5px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .trip-day-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .trip-day-name-input { flex: 1; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 700; color: var(--text); background: var(--bg); font-family: inherit; direction: rtl; }
+    .trip-day-name-input:focus { outline: none; border-color: var(--primary); background: var(--card); }
+    .trip-day-members { display: flex; flex-wrap: wrap; gap: 6px; }
+    .day-member-toggle { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1.5px solid var(--border); border-radius: 20px; background: var(--bg); cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text-light); transition: all .15s; }
+    .day-member-toggle.present { border-color: var(--primary); background: rgba(79,70,229,.1); color: var(--primary); }
+    .day-member-toggle:hover { border-color: var(--primary-light); }
+    [data-theme="dark"] .trip-day-name-input { background: #0f172a; color: var(--text); }
+    [data-theme="dark"] .trip-day-name-input:focus { background: #1e293b; }
+    [data-theme="dark"] .day-member-toggle { background: #1e293b; }
+    [data-theme="dark"] .day-member-toggle.present { background: rgba(99,102,241,.2); }
+    [data-theme="dark"] .trip-day-item { background: #1e293b; }
   </style>
 </head>
 <body>
@@ -362,6 +389,19 @@
   </div>
 </div>
 
+<!-- Trip days management modal -->
+<div id="trip-days-modal" class="modal-overlay" style="display:none" onclick="closeTripDayModal(event)">
+  <div class="modal" style="max-width:460px;max-height:80vh;overflow-y:auto">
+    <div class="modal-title">📅 ימי הטיול</div>
+    <p style="font-size:12px;color:var(--text-light);margin-bottom:14px">לחץ על שם האדם כדי לסמן/לבטל נוכחות ביום</p>
+    <div id="trip-days-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" style="flex:1" onclick="addTripDay()">+ הוסף יום</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('trip-days-modal').style.display='none'">סגור</button>
+    </div>
+  </div>
+</div>
+
 <div id="home-screen" class="screen active">
   <div class="logo">💸</div>
   <h1 class="app-title">Splits</h1>
@@ -386,6 +426,10 @@
       <label>האווטאר שלך</label>
       <div class="avatar-picker" id="ap-create"></div>
     </div>
+    <label class="trip-toggle-row">
+      <input type="checkbox" id="c-trip-group">
+      <span>✈️ טיול רב-ימי (חלוקה לפי ימים)</span>
+    </label>
     <button class="btn btn-primary" onclick="createGroup()">✨ צור קבוצה</button>
   </div>
 
@@ -509,6 +553,14 @@
       <button class="btn btn-primary" onclick="addExpense()">+ הוסף הוצאה</button>
     </div>
 
+    <div id="trip-days-section" style="display:none" class="card trip-days-card">
+      <div class="card-title">
+        📅 ימי הטיול
+        <button class="btn btn-sm btn-secondary" onclick="openTripDayModal()">ניהול ימים ✏️</button>
+      </div>
+      <div id="trip-days-summary"></div>
+    </div>
+
     <div class="card">
       <div class="card-title">חברי הקבוצה</div>
       <div class="members-wrap" id="members-list"></div>
@@ -624,6 +676,7 @@ let myId        = null;
 let myName      = null;
 let groupData   = { name:'', members:{}, expenses:{}, log:{} };
 let unsubscribe = null;
+let openTripModalOnLoad = false;
 
 // ─── Exchange rates ───────────────────────────────────────
 let exchangeRates = null;
@@ -697,18 +750,23 @@ window.createGroup = async function() {
   if (!uName) { toast('אנא הכנס את שמך');   return; }
 
   const uid = myUserId();
+  const isTripGroup = document.getElementById('c-trip-group')?.checked || false;
   let code;
   for (let i=0; i<5; i++) {
     code = genCode();
     if (!(await get(ref(db,`splits/${code}`))).exists()) break;
   }
 
-  await set(ref(db,`splits/${code}`), {
+  const groupPayload = {
     name: gName,
     createdAt: Date.now(),
     members: { [uid]: { name: uName, joinedAt: Date.now(), avatar: selectedAvatarCreate } }
-  });
+  };
+  if (isTripGroup) groupPayload.tripType = 'daily';
 
+  await set(ref(db,`splits/${code}`), groupPayload);
+
+  if (isTripGroup) openTripModalOnLoad = true;
   saveGroupToList(code, uid, uName, gName);
   enterGroup(code, uid, uName);
 };
@@ -970,6 +1028,84 @@ window.toggleCloseGroup = async function() {
     if (!confirm('לסגור את הקבוצה? לא ניתן יהיה להוסיף הוצאות חדשות (אפשר לפתוח מחדש)')) return;
   }
   await update(ref(db,`splits/${groupCode}`), { closed: !isClosed });
+};
+
+// ── Trip day management ──────────────────────────────────────
+window.openTripDayModal = function() {
+  document.getElementById('trip-days-modal').style.display = 'flex';
+  renderTripDaysModal();
+};
+
+window.closeTripDayModal = function(e) {
+  if (e && e.target !== document.getElementById('trip-days-modal')) return;
+  document.getElementById('trip-days-modal').style.display = 'none';
+};
+
+function renderTripDaysModal() {
+  const members = groupData.members || {};
+  const mIds = Object.keys(members);
+  const tripDays = groupData.tripDays || {};
+  const days = Object.entries(tripDays).sort((a,b) => (a[1].order||0) - (b[1].order||0));
+  const el = document.getElementById('trip-days-list');
+  if (!el) return;
+  if (!days.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text-light);padding:20px;font-size:14px">אין ימים עדיין. לחץ "הוסף יום" כדי להתחיל.</div>`;
+    return;
+  }
+  el.innerHTML = days.map(([dayId, day]) => {
+    const dayMembers = day.members || {};
+    return `<div class="trip-day-item">
+      <div class="trip-day-header">
+        <input class="trip-day-name-input" value="${day.name || ''}"
+               onblur="renameTripDay('${dayId}', this.value)"
+               onkeydown="if(event.key==='Enter') this.blur()"
+               maxlength="20">
+        <button class="btn-ghost" onclick="removeTripDay('${dayId}')" title="מחק יום" style="color:var(--danger);font-size:17px">🗑</button>
+      </div>
+      <div class="trip-day-members">
+        ${mIds.map(uid => {
+          const isPresent = uid in dayMembers;
+          const m = members[uid];
+          return `<button class="day-member-toggle ${isPresent ? 'present' : ''}"
+                          onclick="toggleDayMember('${dayId}','${uid}')">
+            <span style="font-size:${m.avatar?'15px':'11px'}">${m.avatar || initials(m.name)}</span>
+            <span>${m.name}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.addTripDay = async function() {
+  const tripDays = groupData.tripDays || {};
+  const existingDays = Object.values(tripDays);
+  const nextOrder = existingDays.length ? Math.max(...existingDays.map(d => d.order||0)) + 1 : 1;
+  const nextNum = existingDays.length + 1;
+  const dayRef = push(ref(db, `splits/${groupCode}/tripDays`));
+  await set(dayRef, { name: `יום ${nextNum}`, order: nextOrder, members: {} });
+};
+
+window.removeTripDay = async function(dayId) {
+  if (!confirm('למחוק יום זה?')) return;
+  await remove(ref(db, `splits/${groupCode}/tripDays/${dayId}`));
+};
+
+window.renameTripDay = async function(dayId, name) {
+  const n = name.trim();
+  if (!n) return;
+  const current = groupData.tripDays?.[dayId]?.name;
+  if (n === current) return;
+  await update(ref(db, `splits/${groupCode}/tripDays/${dayId}`), { name: n });
+};
+
+window.toggleDayMember = async function(dayId, uid) {
+  const dayMembers = groupData.tripDays?.[dayId]?.members || {};
+  if (uid in dayMembers) {
+    await remove(ref(db, `splits/${groupCode}/tripDays/${dayId}/members/${uid}`));
+  } else {
+    await set(ref(db, `splits/${groupCode}/tripDays/${dayId}/members/${uid}`), true);
+  }
 };
 
 // ── Split panel ─────────────────────────────────────────────
@@ -1306,6 +1442,14 @@ function calcBalances() {
     if (p.paidTo in bal) bal[p.paidTo] -= amt;
   });
 
+  // ── Trip group setup ──
+  const tripDays = groupData.tripDays;
+  const daysList = tripDays
+    ? Object.values(tripDays).sort((a,b) => (a.order||0) - (b.order||0))
+    : [];
+  const numDays = daysList.length;
+  const isTripGroup = numDays > 0;
+
   expenses.forEach(e => {
     const amt = e.amountILS ?? e.amount ?? 0;
 
@@ -1317,10 +1461,22 @@ function calcBalances() {
     }
 
     const sa = e.splitAmong;
-    if (sa && !Array.isArray(sa) && typeof sa === 'object') {
-      // ── Custom amounts per person ──
+    const isCustom = sa && !Array.isArray(sa) && typeof sa === 'object';
+
+    if (isCustom) {
+      // ── Custom amounts per person (works in both trip and regular groups) ──
       Object.entries(sa).forEach(([id, share]) => {
         if (id in bal) bal[id] -= share;
+      });
+    } else if (isTripGroup) {
+      // ── Trip group: day-based splitting ──
+      const eligible = Array.isArray(sa) ? sa.filter(id => id in bal) : ids;
+      const perDay = amt / numDays;
+      daysList.forEach(day => {
+        const present = Object.keys(day.members || {}).filter(id => eligible.includes(id) && id in bal);
+        if (!present.length) return;
+        const share = perDay / present.length;
+        present.forEach(id => { bal[id] -= share; });
       });
     } else if (Array.isArray(sa)) {
       // ── Equal among selected members ──
@@ -1415,11 +1571,17 @@ function renderExpenses() {
           : `<div class="exp-amount">${currSymbol(e.currency)}${(e.amount||0).toFixed(2)}<span class="exp-amount-orig">≈ ₪${(e.amountILS ?? e.amount ?? 0).toFixed(2)}</span></div>`;
 
         const sa = e.splitAmong;
-        const splitTag = sa
-          ? Array.isArray(sa)
-            ? `<span class="exp-split-tag">✂️ ${sa.length} משתתפים</span>`
-            : `<span class="exp-split-tag">✂️ חלוקה מותאמת (${Object.keys(sa).length} אנשים)</span>`
-          : '';
+        const isCustom = sa && !Array.isArray(sa) && typeof sa === 'object';
+        const isTripExp = !!groupData.tripDays && Object.keys(groupData.tripDays).length > 0;
+        const splitTag = isCustom
+          ? `<span class="exp-split-tag">✂️ חלוקה מותאמת (${Object.keys(sa).length} אנשים)</span>`
+          : isTripExp
+            ? Array.isArray(sa)
+              ? `<span class="exp-split-tag">📅 ${sa.length} משתתפים · לפי ימים</span>`
+              : `<span class="exp-split-tag">📅 לפי ימים</span>`
+            : sa
+              ? `<span class="exp-split-tag">✂️ ${sa.length} משתתפים</span>`
+              : '';
 
         // Reactions
         const reactions = e.reactions || {};
@@ -1479,6 +1641,54 @@ function render() {
   document.getElementById('g-name').textContent    = groupData.name || '';
   document.getElementById('g-code').textContent    = groupCode;
   document.getElementById('s-members').textContent = `👥 ${mIds.length}`;
+
+  // ── Trip days section ──
+  const tripDaysSection = document.getElementById('trip-days-section');
+  const tripDays = groupData.tripDays;
+  if (tripDaysSection) {
+    if (tripDays) {
+      tripDaysSection.style.display = '';
+      const days = Object.entries(tripDays).sort((a,b) => (a[1].order||0) - (b[1].order||0));
+      const summaryEl = document.getElementById('trip-days-summary');
+      if (summaryEl) {
+        summaryEl.innerHTML = days.length
+          ? days.map(([, day]) => {
+              const presentIds = Object.keys(day.members || {});
+              return `<div class="trip-day-summary-row">
+                <span class="trip-day-name-lbl">${day.name}</span>
+                <div class="trip-day-chips">
+                  ${presentIds.length
+                    ? presentIds.map(uid => {
+                        const m = members[uid];
+                        if (!m) return '';
+                        return `<div class="member-chip" style="font-size:12px;padding:3px 8px 3px 4px">
+                          <div class="avatar" style="width:20px;height:20px;font-size:${m.avatar?'11px':'9px'};background:${avatarColor(uid)}">${m.avatar||initials(m.name)}</div>
+                          ${m.name}
+                        </div>`;
+                      }).join('')
+                    : '<span style="font-size:12px;color:var(--text-light)">אף אחד</span>'
+                  }
+                </div>
+                <span class="trip-day-count">${presentIds.length} נוכחים</span>
+              </div>`;
+            }).join('')
+          : `<div style="font-size:13px;color:var(--text-light);text-align:center;padding:10px">לחץ "ניהול ימים" כדי להוסיף ימים</div>`;
+      }
+    } else {
+      tripDaysSection.style.display = 'none';
+    }
+  }
+
+  // Re-render trip days modal if open
+  if (document.getElementById('trip-days-modal')?.style.display === 'flex') {
+    renderTripDaysModal();
+  }
+
+  // Open trip modal on first load for new trip groups
+  if (openTripModalOnLoad && groupData.tripType === 'daily') {
+    openTripModalOnLoad = false;
+    openTripDayModal();
+  }
 
   // Only real expenses (not legacy payments) count toward the total
   const realExpList = expList.filter(([,e]) => e.type !== 'payment');
