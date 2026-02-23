@@ -477,6 +477,7 @@
     <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
       <div style="display:flex;gap:6px">
       </div>
+      <button class="leave-btn" onclick="leaveGroup()" style="font-size:13px;font-weight:700">← חזרה</button>
       <button class="leave-btn" onclick="shareGroupLink()" title="שלח קישור הצטרפות">🔗 שתף קישור</button>
       <button class="leave-btn" id="close-group-btn" onclick="toggleCloseGroup()" style="font-size:12px">🔒 סגרנו חשבון</button>
     </div>
@@ -804,20 +805,17 @@ function saveGroupToList(code, uid, myName, groupName) {
   localStorage.setItem('splits_groups', JSON.stringify(groups.slice(0, 20)));
 }
 
-let expandedGroupIdx = null;
-let detailsGroupIdx  = null; // second level: details visible
+let expandedGroupIdx   = null;
+let lastEnteredGroupIdx = null; // restored when leaving group
 
 function renderMyGroups() {
   const groups = getSavedGroups();
   const section = document.getElementById('my-groups-section');
   const list = document.getElementById('my-groups-list');
-  if (!groups.length) { section.style.display = 'none'; expandedGroupIdx = null; detailsGroupIdx = null; return; }
+  if (!groups.length) { section.style.display = 'none'; expandedGroupIdx = null; return; }
   section.style.display = '';
-  list.innerHTML = groups.map((g, i) => {
-    const isExpanded = expandedGroupIdx === i;
-    const hasDetails = detailsGroupIdx === i;
-    return `
-    <div class="saved-group-item ${isExpanded ? 'expanded' : ''}" id="sgi-${i}">
+  list.innerHTML = groups.map((g, i) => `
+    <div class="saved-group-item ${expandedGroupIdx === i ? 'expanded' : ''}" id="sgi-${i}">
       <div class="sgi-header" onclick="toggleGroupDetails(${i})">
         <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0;background:${groupGradient(g.code)}">${initials(g.groupName||g.code)}</div>
         <div class="saved-group-info">
@@ -829,53 +827,29 @@ function renderMyGroups() {
       </div>
       <div class="sgi-details" id="sgd-${i}">
         <div class="sgi-detail-content">
-          ${hasDetails
-            ? `<div id="sgd-inner-${i}"><div class="spinner" style="width:22px;height:22px;margin:10px auto;border-width:2px"></div></div>`
-            : ''}
-          <div class="sgi-actions" style="margin-top:${hasDetails?'10px':'0'}">
-            <button class="btn btn-primary" style="flex:1" onclick="handleEnterGroup(${i},event)">${hasDetails ? 'כנס לקבוצה ←' : 'כנס לקבוצה ▾'}</button>
-            <button class="btn btn-secondary" onclick="shareGroupLink('${g.code}');event.stopPropagation()" title="שתף קישור הצטרפות">🔗 שתף</button>
-          </div>
+          <div class="spinner" style="width:22px;height:22px;margin:10px auto;border-width:2px"></div>
         </div>
       </div>
-    </div>`;
-  }).join('');
-  if (detailsGroupIdx !== null) loadGroupDetails(detailsGroupIdx);
+    </div>
+  `).join('');
+  if (expandedGroupIdx !== null) loadGroupDetails(expandedGroupIdx);
 }
 
 window.toggleGroupDetails = function(idx) {
-  if (expandedGroupIdx === idx) {
-    expandedGroupIdx = null;
-    detailsGroupIdx  = null;
-  } else {
-    expandedGroupIdx = idx;
-    detailsGroupIdx  = null;
-  }
+  expandedGroupIdx = (expandedGroupIdx === idx) ? null : idx;
   renderMyGroups();
-};
-
-window.handleEnterGroup = function(idx, e) {
-  e.stopPropagation();
-  if (detailsGroupIdx === idx) {
-    // Details already visible → enter group
-    enterSavedGroup(idx);
-  } else {
-    // First click → show details
-    detailsGroupIdx = idx;
-    renderMyGroups();
-  }
 };
 
 async function loadGroupDetails(idx) {
   const groups = getSavedGroups();
   const g = groups[idx];
   if (!g) return;
-  const innerEl = document.getElementById(`sgd-inner-${idx}`);
-  if (!innerEl) return;
+  const detailEl = document.getElementById(`sgd-${idx}`);
+  if (!detailEl) return;
   try {
     const snap = await get(ref(db, `splits/${g.code}`));
     if (!snap.exists()) {
-      innerEl.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:8px 0">קבוצה לא נמצאה – ייתכן שנמחקה</div>';
+      detailEl.innerHTML = '<div class="sgi-detail-content" style="color:var(--danger);font-size:13px">קבוצה לא נמצאה – ייתכן שנמחקה</div>';
       return;
     }
     const data = snap.val();
@@ -885,17 +859,23 @@ async function loadGroupDetails(idx) {
     const total = Object.values(expenses).reduce((s,e) => s+(e.amountILS ?? e.amount ?? 0), 0);
     g.groupName = data.name || g.groupName;
     localStorage.setItem('splits_groups', JSON.stringify(groups));
-    innerEl.innerHTML = `
-      <div class="sgi-stats">
-        <div class="sgi-stat"><span class="sgi-stat-val">${mIds.length}</span><span class="sgi-stat-lbl">חברים</span></div>
-        <div class="sgi-stat"><span class="sgi-stat-val">₪${total.toFixed(0)}</span><span class="sgi-stat-lbl">הוצאות</span></div>
-        <div class="sgi-stat"><span class="sgi-stat-val">${Object.keys(expenses).length}</span><span class="sgi-stat-lbl">פעולות</span></div>
-      </div>
-      <div class="sgi-members">
-        ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:${members[id].avatar?'13px':'10px'};background:${avatarColor(id)}">${members[id].avatar||initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
+    detailEl.innerHTML = `
+      <div class="sgi-detail-content">
+        <div class="sgi-stats">
+          <div class="sgi-stat"><span class="sgi-stat-val">${mIds.length}</span><span class="sgi-stat-lbl">חברים</span></div>
+          <div class="sgi-stat"><span class="sgi-stat-val">₪${total.toFixed(0)}</span><span class="sgi-stat-lbl">הוצאות</span></div>
+          <div class="sgi-stat"><span class="sgi-stat-val">${Object.keys(expenses).length}</span><span class="sgi-stat-lbl">פעולות</span></div>
+        </div>
+        <div class="sgi-members">
+          ${mIds.map(id=>`<div class="member-chip" style="font-size:12px;padding:3px 9px 3px 4px"><div class="avatar" style="width:22px;height:22px;font-size:${members[id].avatar?'13px':'10px'};background:${avatarColor(id)}">${members[id].avatar||initials(members[id].name)}</div>${members[id].name}</div>`).join('')}
+        </div>
+        <div class="sgi-actions">
+          <button class="btn btn-primary" style="flex:1" onclick="enterSavedGroup(${idx})">כנס לקבוצה ←</button>
+          <button class="btn btn-secondary" onclick="shareGroupLink('${g.code}')" title="שתף קישור הצטרפות">🔗 שתף</button>
+        </div>
       </div>`;
   } catch {
-    innerEl.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:8px 0">שגיאה בטעינת פרטים</div>';
+    detailEl.innerHTML = '<div class="sgi-detail-content" style="color:var(--danger);font-size:13px">שגיאה בטעינת פרטים</div>';
   }
 }
 
@@ -915,6 +895,7 @@ window.enterSavedGroup = async function(idx) {
   g.groupName = snap.val().name || g.groupName;
   g.lastAccessed = Date.now();
   localStorage.setItem('splits_groups', JSON.stringify(groups));
+  lastEnteredGroupIdx = idx;
   expandedGroupIdx = null;
   enterGroup(g.code, g.uid, g.myName);
 };
@@ -1305,6 +1286,8 @@ window.leaveGroup = function() {
   groupCode = myId = myName = null;
   document.getElementById('group-screen').classList.remove('active');
   document.getElementById('home-screen').classList.add('active');
+  expandedGroupIdx = lastEnteredGroupIdx; // restore the open card
+  lastEnteredGroupIdx = null;
   renderMyGroups();
 };
 
