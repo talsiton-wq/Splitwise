@@ -69,11 +69,6 @@
     .btn-ghost:hover { background: var(--bg); color: var(--danger); }
 
     #group-screen { max-width: 620px; margin: 0 auto; padding: 14px; }
-    @keyframes slideUpIn {
-      from { transform: translateY(80px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    #group-screen.active { animation: slideUpIn .35s cubic-bezier(.22,.68,0,1.2) both; }
 
     .group-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
     .group-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
@@ -947,6 +942,8 @@ function enterGroup(code, uid, name) {
 
   document.getElementById('home-screen').classList.remove('active');
   document.getElementById('group-screen').classList.add('active');
+  window.scrollTo(0, 130);
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   document.querySelector('.group-header').style.background = groupGradient(code);
   initDark();
 
